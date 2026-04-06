@@ -170,12 +170,12 @@ fun ArcGauge(
             // Value text
             val vl = tm.measure(value.toInt().toString(),
                 TextStyle(color = C.TextPrimary, fontSize = 28.sp, fontWeight = FontWeight.ExtraLight, textAlign = TextAlign.Center))
-            drawText(vl, Offset(cx - vl.size.width / 2f, cy + 14f))
+            drawText(vl, topLeft = Offset(cx - vl.size.width / 2f, cy + 14f))
 
             // Unit text
             val ul = tm.measure(unit,
                 TextStyle(color = C.TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, textAlign = TextAlign.Center))
-            drawText(ul, Offset(cx - ul.size.width / 2f, cy + 42f))
+            drawText(ul, topLeft = Offset(cx - ul.size.width / 2f, cy + 42f))
         }
 
         Text(label, style = TextStyle(color = C.TextSub, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp),
@@ -257,7 +257,7 @@ fun GForceIndicator(
         drawCircle(color, 4f, Offset(dx, dy))
 
         val gl = tm.measure("G", TextStyle(color = C.TextMuted, fontSize = 6.sp, fontWeight = FontWeight.Bold))
-        drawText(gl, Offset(cx - gl.size.width / 2f, cy + r + 2f))
+        drawText(gl, topLeft = Offset(cx - gl.size.width / 2f, cy + r + 2f))
     }
 }
 
@@ -302,12 +302,12 @@ fun CompassRose(
             val lay = tm.measure(lbl, TextStyle(color = if (isN) color else C.TextSub, fontSize = if (isN) 13.sp else 9.sp, fontWeight = FontWeight.Bold))
             val px = cx + cos(a).toFloat() * lr - lay.size.width / 2f
             val py = cy + sin(a).toFloat() * lr - lay.size.height / 2f
-            drawText(lay, Offset(px, py))
+            drawText(lay, topLeft = Offset(px, py))
         }
 
         // Center heading value
         val hl = tm.measure("$heading\u00b0", TextStyle(color = C.TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Thin, textAlign = TextAlign.Center))
-        drawText(hl, Offset(cx - hl.size.width / 2f, cy - hl.size.height / 2f))
+        drawText(hl, topLeft = Offset(cx - hl.size.width / 2f, cy - hl.size.height / 2f))
     }
 }
 
@@ -335,9 +335,9 @@ fun TempKnob(
             topLeft = Offset(cx - r, cy - r), size = Size(r * 2, r * 2))
 
         val vl = tm.measure("$value", TextStyle(color = C.TextPrimary, fontSize = 30.sp, fontWeight = FontWeight.Thin, textAlign = TextAlign.Center))
-        drawText(vl, Offset(cx - vl.size.width / 2f, cy - vl.size.height / 2f - 4f))
+        drawText(vl, topLeft = Offset(cx - vl.size.width / 2f, cy - vl.size.height / 2f - 4f))
         val ul = tm.measure("\u00b0F", TextStyle(color = C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center))
-        drawText(ul, Offset(cx - ul.size.width / 2f, cy + vl.size.height / 2f - 10f))
+        drawText(ul, topLeft = Offset(cx - ul.size.width / 2f, cy + vl.size.height / 2f - 10f))
     }
 }
 
