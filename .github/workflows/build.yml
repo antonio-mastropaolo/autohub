@@ -23,8 +23,18 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Upload APK to GitHub Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: AutoHub-debug
           path: app/build/outputs/apk/debug/*.apk
+
+      - name: Upload APK to Google Drive
+        env:
+          RCLONE_CONFIG_GDRIVE_TYPE: drive
+          RCLONE_CONFIG_GDRIVE_TOKEN: ${{ secrets.RCLONE_GDRIVE_TOKEN }}
+        run: |
+          curl -sO https://downloads.rclone.org/current/rclone-current-linux-amd64.zip
+          unzip -q rclone-current-linux-amd64.zip
+          ./rclone-*/rclone copy app/build/outputs/apk/debug/ gdrive:autohub/ --verbose
+          echo "✅ APK uploaded to Google Drive: MyDrive/autohub/"
