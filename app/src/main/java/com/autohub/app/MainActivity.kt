@@ -206,12 +206,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                     }
 
                     // Settings
-                    Icon(
-                        imageVector = Icons.Outlined.Settings,
-                        contentDescription = "Settings",
-                        tint = C.TextMuted,
-                        modifier = Modifier.size(22.dp)
-                    )
+                    DockItem(Icons.Outlined.Settings, "SET", "settings", tab) { hudActive = false; tab = it }
                 }
 
                 // ── Main Content ──
@@ -246,6 +241,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                                 "nav" -> NavScreen(car)
                                 "diagnostics" -> DiagnosticsScreen(car)
                                 "hud" -> HudScreen(car)
+                                "settings" -> SettingsScreen(car, vm)
                             }
                         }
                     }

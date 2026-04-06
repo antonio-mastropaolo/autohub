@@ -495,6 +495,19 @@ class CarViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun reconnectObd() {
+        viewModelScope.launch {
+            try {
+                Log.i(TAG, "Manual OBD reconnect requested")
+                obdManager.disconnect()
+                delay(1000)
+                obdManager.connectAny()
+            } catch (e: Exception) {
+                Log.e(TAG, "Manual OBD reconnect failed", e)
+            }
+        }
+    }
+
     fun openSpotify() {
         try {
             val ctx = getApplication<Application>().applicationContext
