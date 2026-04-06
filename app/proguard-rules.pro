@@ -1,0 +1,3 @@
+# Keep Compose
+-dontwarn androidx.compose.**
+-keep class androidx.compose.** { *; }
