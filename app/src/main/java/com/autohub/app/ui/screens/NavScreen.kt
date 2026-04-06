@@ -35,298 +35,257 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
-import org.osmdroid.views.overlay.compass.CompassOverlay
 
 @Composable
 fun NavScreen(car: CarState) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    // Configure osmdroid once
     LaunchedEffect(Unit) {
         Configuration.getInstance().userAgentValue = "com.autohub.app"
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
-        // ── Live Map ──
-        GlassCard(modifier = Modifier.fillMaxWidth().height(280.dp)) {
-            Box(Modifier.fillMaxSize().clip(RoundedCornerShape(10.dp))) {
-                // Embedded OSM map
-                val mapViewRef = remember { mutableStateOf<MapView?>(null) }
-                val markerRef = remember { mutableStateOf<Marker?>(null) }
+        // ═══════════════════════════════════════════════════════
+        //  MAP — Full-width, taller, dark-styled
+        // ═══════════════════════════════════════════════════════
+        Box(
+            Modifier.fillMaxWidth().height(320.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .border(1.dp, C.GlassBorder, RoundedCornerShape(14.dp))
+        ) {
+            val mapViewRef = remember { mutableStateOf<MapView?>(null) }
+            val markerRef = remember { mutableStateOf<Marker?>(null) }
 
-                AndroidView(
-                    factory = { ctx ->
-                        MapView(ctx).apply {
-                            setTileSource(TileSourceFactory.MAPNIK)
-                            setMultiTouchControls(true)
-                            controller.setZoom(16.0)
-                            val startPoint = GeoPoint(car.latitude.toDouble(), car.longitude.toDouble())
-                            controller.setCenter(startPoint)
+            AndroidView(
+                factory = { ctx ->
+                    MapView(ctx).apply {
+                        setTileSource(TileSourceFactory.MAPNIK)
+                        setMultiTouchControls(true)
+                        controller.setZoom(16.0)
+                        val startPoint = GeoPoint(car.latitude.toDouble(), car.longitude.toDouble())
+                        controller.setCenter(startPoint)
 
-                            // Dark overlay tint for the glass theme
-                            overlayManager.tilesOverlay.setColorFilter(
-                                android.graphics.ColorMatrixColorFilter(
-                                    floatArrayOf(
-                                        0.3f, 0f, 0f, 0f, 0f,
-                                        0f, 0.3f, 0f, 0f, 0f,
-                                        0f, 0f, 0.45f, 0f, 0f,
-                                        0f, 0f, 0f, 1f, 0f
-                                    )
+                        // Dark overlay — deeper blue tint for night-driving feel
+                        overlayManager.tilesOverlay.setColorFilter(
+                            android.graphics.ColorMatrixColorFilter(
+                                floatArrayOf(
+                                    0.22f, 0f, 0f, 0f, 0f,
+                                    0f, 0.22f, 0f, 0f, 0f,
+                                    0f, 0f, 0.38f, 0f, 10f,
+                                    0f, 0f, 0f, 1f, 0f
                                 )
                             )
+                        )
 
-                            // Location marker
-                            val marker = Marker(this)
-                            marker.position = startPoint
-                            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
-                            marker.title = "You"
-                            marker.rotation = car.heading.toFloat()
-                            overlays.add(marker)
+                        val marker = Marker(this)
+                        marker.position = startPoint
+                        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                        marker.title = "You"
+                        marker.rotation = car.heading.toFloat()
+                        overlays.add(marker)
 
-                            mapViewRef.value = this
-                            markerRef.value = marker
-                        }
-                    },
-                    update = { mapView ->
-                        val pos = GeoPoint(car.latitude.toDouble(), car.longitude.toDouble())
-                        mapView.controller.animateTo(pos)
-                        markerRef.value?.let { marker ->
-                            marker.position = pos
-                            marker.rotation = car.heading.toFloat()
-                        }
-                        mapView.invalidate()
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
-
-                // Lifecycle handling for map
-                DisposableEffect(lifecycleOwner) {
-                    val observer = LifecycleEventObserver { _, event ->
-                        when (event) {
-                            Lifecycle.Event.ON_RESUME -> mapViewRef.value?.onResume()
-                            Lifecycle.Event.ON_PAUSE -> mapViewRef.value?.onPause()
-                            else -> {}
-                        }
+                        mapViewRef.value = this
+                        markerRef.value = marker
                     }
-                    lifecycleOwner.lifecycle.addObserver(observer)
-                    onDispose {
-                        lifecycleOwner.lifecycle.removeObserver(observer)
-                        mapViewRef.value?.onDetach()
+                },
+                update = { mapView ->
+                    val pos = GeoPoint(car.latitude.toDouble(), car.longitude.toDouble())
+                    mapView.controller.animateTo(pos)
+                    markerRef.value?.let { marker ->
+                        marker.position = pos
+                        marker.rotation = car.heading.toFloat()
+                    }
+                    mapView.invalidate()
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+
+            // Lifecycle handling
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    when (event) {
+                        Lifecycle.Event.ON_RESUME -> mapViewRef.value?.onResume()
+                        Lifecycle.Event.ON_PAUSE -> mapViewRef.value?.onPause()
+                        else -> {}
                     }
                 }
-
-                // ── Speed overlay (top-left) ──
-                Box(
-                    Modifier.align(Alignment.TopStart).padding(8.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(C.Background.copy(alpha = 0.85f))
-                        .border(1.dp, C.GlassBorder, RoundedCornerShape(10.dp))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        val over = car.speed > car.speedLimit
-                        Text(
-                            "${car.speed}",
-                            style = TextStyle(
-                                fontSize = 28.sp, fontWeight = FontWeight.Thin,
-                                color = if (over) C.Red else C.TextPrimary
-                            )
-                        )
-                        Text(
-                            " MPH",
-                            style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                    }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose {
+                    lifecycleOwner.lifecycle.removeObserver(observer)
+                    mapViewRef.value?.onDetach()
                 }
+            }
 
-                // ── Heading overlay (top-right) ──
-                Box(
-                    Modifier.align(Alignment.TopEnd).padding(8.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(C.Background.copy(alpha = 0.85f))
-                        .border(1.dp, C.GlassBorder, RoundedCornerShape(10.dp))
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    val dir = when {
-                        car.heading < 23 || car.heading >= 338 -> "N"
-                        car.heading < 68 -> "NE"; car.heading < 113 -> "E"
-                        car.heading < 158 -> "SE"; car.heading < 203 -> "S"
-                        car.heading < 248 -> "SW"; car.heading < 293 -> "W"
-                        else -> "NW"
-                    }
+            // ── Speed overlay (top-left) ──
+            Box(
+                Modifier.align(Alignment.TopStart).padding(10.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(C.Background.copy(alpha = 0.90f))
+                    .border(1.dp, C.GlassBorder, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    val over = car.speed > car.speedLimit
                     Text(
-                        "${car.heading}\u00b0 $dir",
-                        style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Light, color = C.TextSecondary)
+                        "${car.speed}",
+                        style = TextStyle(
+                            fontSize = 32.sp, fontWeight = FontWeight.Thin,
+                            color = if (over) C.Red else C.TextPrimary
+                        )
+                    )
+                    Text(
+                        " MPH",
+                        style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
+                        modifier = Modifier.padding(bottom = 5.dp)
+                    )
+                    if (over) {
+                        Spacer(Modifier.width(8.dp))
+                        Pill("+${car.speed - car.speedLimit}", C.Red)
+                    }
+                }
+            }
+
+            // ── Heading overlay (top-right) ──
+            Box(
+                Modifier.align(Alignment.TopEnd).padding(10.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(C.Background.copy(alpha = 0.90f))
+                    .border(1.dp, C.GlassBorder, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+            ) {
+                val dir = when {
+                    car.heading < 23 || car.heading >= 338 -> "N"
+                    car.heading < 68 -> "NE"; car.heading < 113 -> "E"
+                    car.heading < 158 -> "SE"; car.heading < 203 -> "S"
+                    car.heading < 248 -> "SW"; car.heading < 293 -> "W"
+                    else -> "NW"
+                }
+                Text(
+                    "${car.heading}\u00b0 $dir",
+                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Light, color = C.TextSecondary)
+                )
+            }
+
+            // ── GPS status (bottom-left) ──
+            Box(
+                Modifier.align(Alignment.BottomStart).padding(10.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(C.Background.copy(alpha = 0.90f))
+                    .border(1.dp, C.GlassBorder, RoundedCornerShape(8.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    StatusDot(if (car.gpsActive) C.Green else C.Amber, 5.dp)
+                    Text(
+                        "${car.satellites} SAT  \u2022  ${car.altitude}ft",
+                        style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = C.TextSub)
+                    )
+                }
+            }
+
+            // ── Navigate buttons (bottom-right) ──
+            Row(
+                Modifier.align(Alignment.BottomEnd).padding(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Waze FAB
+                Box(
+                    Modifier.size(44.dp).clip(CircleShape)
+                        .background(C.Cyan.copy(alpha = 0.15f))
+                        .border(1.dp, C.Cyan.copy(alpha = 0.3f), CircleShape)
+                        .clickable {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(
+                                    "waze://?ll=${car.latitude},${car.longitude}&navigate=yes"
+                                ))
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(intent)
+                            } catch (_: Exception) {
+                                val intent = Intent(Intent.ACTION_VIEW,
+                                    Uri.parse("market://details?id=com.waze"))
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(intent)
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.Navigation,
+                        contentDescription = "Waze",
+                        tint = C.Cyan,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
 
-                // ── GPS status (bottom-left) ──
+                // Google Maps FAB
                 Box(
-                    Modifier.align(Alignment.BottomStart).padding(8.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(C.Background.copy(alpha = 0.85f))
-                        .border(1.dp, C.GlassBorder, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                    Modifier.size(44.dp).clip(CircleShape)
+                        .background(C.Green.copy(alpha = 0.15f))
+                        .border(1.dp, C.Green.copy(alpha = 0.3f), CircleShape)
+                        .clickable {
+                            try {
+                                val intent = Intent(Intent.ACTION_VIEW,
+                                    Uri.parse("google.navigation:q=&mode=d"))
+                                intent.setPackage("com.google.android.apps.maps")
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(intent)
+                            } catch (_: Exception) {
+                                val intent = Intent(Intent.ACTION_VIEW,
+                                    Uri.parse("market://details?id=com.google.android.apps.maps"))
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(intent)
+                            }
+                        },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        StatusDot(if (car.gpsActive) C.Green else C.Amber, 5.dp)
-                        Text(
-                            "${car.satellites} SAT",
-                            style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = C.TextSub)
-                        )
-                        Text(
-                            "${car.altitude}ft",
-                            style = TextStyle(fontSize = 11.sp, color = C.TextMuted)
-                        )
-                    }
-                }
-
-                // ── Altitude overlay (bottom-right) ──
-                Box(
-                    Modifier.align(Alignment.BottomEnd).padding(8.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(C.Background.copy(alpha = 0.85f))
-                        .border(1.dp, C.GlassBorder, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        "%.4f, %.4f".format(car.latitude, car.longitude),
-                        style = TextStyle(fontSize = 10.sp, color = C.TextMuted)
+                    Icon(
+                        Icons.Outlined.Map,
+                        contentDescription = "Google Maps",
+                        tint = C.Green,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
         }
 
-        // ── Bottom: Quick actions + Trip stats ──
+        // ═══════════════════════════════════════════════════════
+        //  BOTTOM: Trip stats — clean, single row
+        // ═══════════════════════════════════════════════════════
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Speed + Limit
             GlassCard(Modifier.weight(1f)) {
-                LabelText("SPEED")
-                Spacer(Modifier.height(4.dp))
-                val over = car.speed > car.speedLimit
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Text(
-                        "${car.speed}",
-                        style = TextStyle(
-                            fontSize = 26.sp, fontWeight = FontWeight.Thin,
-                            color = if (over) C.Red else C.TextPrimary
-                        )
-                    )
-                    Text(
-                        " / ${car.speedLimit}",
-                        style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Thin, color = C.TextMuted),
-                        modifier = Modifier.padding(bottom = 2.dp)
-                    )
-                }
-                if (over) {
-                    Spacer(Modifier.height(2.dp))
-                    Pill("+${car.speed - car.speedLimit} OVER", C.Red)
-                }
-            }
-
-            // Trip stats
-            GlassCard(Modifier.weight(1.2f)) {
                 LabelText("TRIP")
                 Spacer(Modifier.height(4.dp))
                 TripRow("Distance", "%.1f mi".format(car.trip))
                 TripRow("Duration", "${car.tripTime / 60}h ${car.tripTime % 60}m")
                 TripRow("Avg Speed", "${car.avgSpeed} MPH")
             }
-
-            // Launch Waze
-            GlassCard(
-                modifier = Modifier.weight(0.8f)
-                    .clickable {
-                        try {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("waze://"))
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            context.startActivity(intent)
-                        } catch (_: Exception) {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                Uri.parse("market://details?id=com.waze")
-                            )
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            context.startActivity(intent)
-                        }
-                    }
-            ) {
-                Column(
-                    Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Navigation,
-                        contentDescription = "Waze",
-                        tint = C.Cyan,
-                        modifier = Modifier.size(34.dp)
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "WAZE",
-                        style = TextStyle(
-                            fontSize = 13.sp, fontWeight = FontWeight.Bold,
-                            color = C.Cyan, letterSpacing = 1.sp
-                        )
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        "Navigate",
-                        style = TextStyle(fontSize = 11.sp, color = C.TextSub)
-                    )
-                }
+            GlassCard(Modifier.weight(1f)) {
+                LabelText("POSITION")
+                Spacer(Modifier.height(4.dp))
+                TripRow("Latitude", "%.4f".format(car.latitude))
+                TripRow("Longitude", "%.4f".format(car.longitude))
+                TripRow("Altitude", "${car.altitude} ft")
             }
-
-            // Launch Google Maps
-            GlassCard(
-                modifier = Modifier.weight(0.8f)
-                    .clickable {
-                        try {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                Uri.parse("google.navigation:q=&mode=d")
-                            )
-                            intent.setPackage("com.google.android.apps.maps")
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            context.startActivity(intent)
-                        } catch (_: Exception) {
-                            val intent = Intent(
-                                Intent.ACTION_VIEW,
-                                Uri.parse("market://details?id=com.google.android.apps.maps")
-                            )
-                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            context.startActivity(intent)
-                        }
-                    }
-            ) {
-                Column(
-                    Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Map,
-                        contentDescription = "Google Maps",
-                        tint = C.Green,
-                        modifier = Modifier.size(34.dp)
-                    )
-                    Spacer(Modifier.height(4.dp))
+            GlassCard(Modifier.weight(1f)) {
+                LabelText("SPEED")
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
                     Text(
-                        "MAPS",
+                        "${car.speed}",
                         style = TextStyle(
-                            fontSize = 13.sp, fontWeight = FontWeight.Bold,
-                            color = C.Green, letterSpacing = 1.sp
+                            fontSize = 32.sp, fontWeight = FontWeight.Thin,
+                            color = if (car.speed > car.speedLimit) C.Red else C.TextPrimary
                         )
                     )
-                    Spacer(Modifier.height(2.dp))
                     Text(
-                        "Navigate",
-                        style = TextStyle(fontSize = 11.sp, color = C.TextSub)
+                        " / ${car.speedLimit} MPH",
+                        style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Thin, color = C.TextMuted),
+                        modifier = Modifier.padding(bottom = 4.dp)
                     )
                 }
             }

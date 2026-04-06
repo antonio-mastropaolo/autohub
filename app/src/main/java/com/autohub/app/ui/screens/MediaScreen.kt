@@ -1,7 +1,5 @@
 package com.autohub.app.ui.screens
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,7 +7,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material.icons.outlined.Pause
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.SkipNext
+import androidx.compose.material.icons.outlined.SkipPrevious
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,139 +19,245 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.autohub.app.data.CarState
+import com.autohub.app.data.CarViewModel
 import com.autohub.app.ui.components.*
 import com.autohub.app.ui.theme.C
 
+private val SpotifyGreen = Color(0xFF1DB954)
+private val SpotifyGreenDim = Color(0x141DB954)
+
 @Composable
-fun MediaScreen(car: CarState) {
-    val context = LocalContext.current
+fun MediaScreen(car: CarState, vm: CarViewModel) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-
-        // ── Now Playing ──
+        // ═══════════════════════════════════════════════════════
+        //  NOW PLAYING — Large album art + track info + controls
+        // ═══════════════════════════════════════════════════════
         GlassCard(Modifier.fillMaxWidth()) {
-            LabelText("NOW PLAYING")
-            Spacer(Modifier.height(8.dp))
             Row(
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Album art
+                // Album art placeholder
                 Box(
-                    Modifier.size(90.dp).clip(RoundedCornerShape(12.dp))
-                        .background(Brush.linearGradient(listOf(C.Purple, C.Blue))),
+                    Modifier.size(110.dp).clip(RoundedCornerShape(14.dp))
+                        .background(
+                            Brush.linearGradient(
+                                listOf(
+                                    SpotifyGreen.copy(alpha = 0.3f),
+                                    C.Purple.copy(alpha = 0.2f)
+                                )
+                            )
+                        )
+                        .border(1.dp, SpotifyGreen.copy(alpha = 0.15f), RoundedCornerShape(14.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("\u266a", style = TextStyle(fontSize = 40.sp, color = Color.White.copy(alpha = 0.25f)))
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "\u266b",
+                            style = TextStyle(fontSize = 36.sp, color = SpotifyGreen.copy(alpha = 0.6f))
+                        )
+                        if (car.mediaAlbum.isNotEmpty()) {
+                            Text(
+                                car.mediaAlbum,
+                                style = TextStyle(
+                                    fontSize = 9.sp,
+                                    color = C.TextMuted,
+                                    fontWeight = FontWeight.Medium,
+                                ),
+                                maxLines = 2,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                        }
+                    }
                 }
 
+                // Track info + progress + controls
                 Column(Modifier.weight(1f)) {
-                    Text(car.mediaTitle, style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
-                    Spacer(Modifier.height(2.dp))
-                    Text(car.mediaArtist, style = TextStyle(fontSize = 16.sp, color = C.TextSub))
+                    // Source badge
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        StatusDot(SpotifyGreen, 5.dp)
+                        Text(
+                            car.mediaSource.uppercase(),
+                            style = TextStyle(
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = SpotifyGreen,
+                                letterSpacing = 1.5.sp
+                            )
+                        )
+                        if (car.mediaPlaying) {
+                            Pill("PLAYING", SpotifyGreen)
+                        }
+                    }
 
-                    Spacer(Modifier.height(10.dp))
-                    ProgressBar(car.mediaProgress, 1f, C.Purple, 4.dp)
-                    Spacer(Modifier.height(3.dp))
+                    Spacer(Modifier.height(6.dp))
+
+                    // Track title
+                    Text(
+                        car.mediaTitle,
+                        style = TextStyle(
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Light,
+                            color = C.TextPrimary,
+                        ),
+                        maxLines = 1
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    // Artist
+                    Text(
+                        car.mediaArtist,
+                        style = TextStyle(fontSize = 16.sp, color = C.TextSub),
+                        maxLines = 1
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    // Progress bar
+                    ProgressBar(car.mediaProgress, 1f, SpotifyGreen, 4.dp)
+                    Spacer(Modifier.height(4.dp))
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
                         Text(car.mediaCurrent, style = TextStyle(fontSize = 12.sp, color = C.TextMuted))
                         Text(car.mediaDuration, style = TextStyle(fontSize = 12.sp, color = C.TextMuted))
                     }
 
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(12.dp))
 
-                    // Controls
+                    // Playback controls
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("\u23ee", style = TextStyle(fontSize = 30.sp, color = C.TextSub))
-                        Spacer(Modifier.width(24.dp))
+                        // Previous
                         Box(
-                            Modifier.size(48.dp).clip(CircleShape)
-                                .background(C.Purple.copy(alpha = 0.15f))
-                                .border(1.dp, C.Purple.copy(alpha = 0.3f), CircleShape),
+                            Modifier.size(44.dp).clip(CircleShape)
+                                .background(C.Glass)
+                                .clickable { vm.spotifyPrevious() },
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                if (car.mediaPlaying) "\u23f8" else "\u25b6",
-                                style = TextStyle(fontSize = 22.sp, color = C.Purple)
+                            Icon(
+                                Icons.Outlined.SkipPrevious,
+                                contentDescription = "Previous",
+                                tint = C.TextSub,
+                                modifier = Modifier.size(26.dp)
                             )
                         }
-                        Spacer(Modifier.width(24.dp))
-                        Text("\u23ed", style = TextStyle(fontSize = 30.sp, color = C.TextSub))
+
+                        Spacer(Modifier.width(20.dp))
+
+                        // Play/Pause
+                        Box(
+                            Modifier.size(56.dp).clip(CircleShape)
+                                .background(SpotifyGreen.copy(alpha = 0.15f))
+                                .border(1.dp, SpotifyGreen.copy(alpha = 0.3f), CircleShape)
+                                .clickable { vm.spotifyPlayPause() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                if (car.mediaPlaying) Icons.Outlined.Pause else Icons.Outlined.PlayArrow,
+                                contentDescription = if (car.mediaPlaying) "Pause" else "Play",
+                                tint = SpotifyGreen,
+                                modifier = Modifier.size(30.dp)
+                            )
+                        }
+
+                        Spacer(Modifier.width(20.dp))
+
+                        // Next
+                        Box(
+                            Modifier.size(44.dp).clip(CircleShape)
+                                .background(C.Glass)
+                                .clickable { vm.spotifyNext() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Outlined.SkipNext,
+                                contentDescription = "Next",
+                                tint = C.TextSub,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // ── EQ + Volume + Source + Spotify ──
+        // ═══════════════════════════════════════════════════════
+        //  BOTTOM: EQ + Volume + Open Spotify
+        // ═══════════════════════════════════════════════════════
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // EQ Visualizer
             GlassCard(Modifier.weight(1f)) {
                 LabelText("EQUALIZER")
                 Spacer(Modifier.height(8.dp))
-                EQVisualizer(car.eqBands, C.Purple, Modifier.fillMaxWidth().height(55.dp))
+                EQVisualizer(car.eqBands, SpotifyGreen, Modifier.fillMaxWidth().height(60.dp))
             }
+
+            // Volume
             GlassCard(Modifier.weight(0.5f)) {
                 LabelText("VOLUME")
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text("${car.volume}", style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Thin, color = C.TextPrimary))
-                    Text("%", style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
-                        modifier = Modifier.padding(bottom = 3.dp))
+                    Text(
+                        "${car.volume}",
+                        style = TextStyle(
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Thin,
+                            color = C.TextPrimary
+                        )
+                    )
+                    Text(
+                        "%",
+                        style = TextStyle(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = C.TextMuted
+                        ),
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
                 }
                 Spacer(Modifier.height(4.dp))
-                ProgressBar(car.volume.toFloat(), 100f, C.Purple)
-            }
-            GlassCard(Modifier.weight(0.5f)) {
-                LabelText("SOURCE")
-                Spacer(Modifier.height(6.dp))
-                SourceRow("Bluetooth", car.mediaSource == "Bluetooth")
-                SourceRow("USB", car.mediaSource == "USB")
-                SourceRow("Radio", car.mediaSource == "Radio")
-                SourceRow("Streaming", car.mediaSource == "Streaming")
+                ProgressBar(car.volume.toFloat(), 100f, SpotifyGreen)
             }
 
-            // Spotify Launch Button
+            // Open Spotify
             GlassCard(
                 modifier = Modifier.weight(0.5f)
-                    .clickable {
-                        try {
-                            val intent = context.packageManager.getLaunchIntentForPackage("com.spotify.music")
-                            if (intent != null) {
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                context.startActivity(intent)
-                            } else {
-                                val storeIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.spotify.music"))
-                                storeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                context.startActivity(storeIntent)
-                            }
-                        } catch (_: Exception) { }
-                    }
+                    .clickable { vm.openSpotify() }
             ) {
                 Column(
                     Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.MusicNote,
-                        contentDescription = "Spotify",
-                        tint = Color(0xFF1DB954),
-                        modifier = Modifier.size(36.dp)
-                    )
                     Spacer(Modifier.height(4.dp))
+                    Box(
+                        Modifier.size(44.dp).clip(CircleShape)
+                            .background(SpotifyGreenDim)
+                            .border(1.dp, SpotifyGreen.copy(alpha = 0.2f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "\u266b",
+                            style = TextStyle(fontSize = 22.sp, color = SpotifyGreen)
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
                     Text(
                         "SPOTIFY",
                         style = TextStyle(
-                            fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1DB954), letterSpacing = 1.sp
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = SpotifyGreen,
+                            letterSpacing = 1.5.sp
                         )
                     )
                     Spacer(Modifier.height(2.dp))
@@ -161,17 +268,5 @@ fun MediaScreen(car: CarState) {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun SourceRow(name: String, active: Boolean) {
-    Row(
-        Modifier.fillMaxWidth().padding(vertical = 3.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        StatusDot(if (active) C.Purple else C.TextMuted, 5.dp)
-        Text(name, style = TextStyle(fontSize = 14.sp, color = if (active) C.TextPrimary else C.TextMuted))
     }
 }

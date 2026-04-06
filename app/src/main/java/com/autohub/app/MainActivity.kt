@@ -41,8 +41,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.autohub.app.data.CarViewModel
-import com.autohub.app.ui.components.LabelText
-import com.autohub.app.ui.components.ProgressBar
 import com.autohub.app.ui.components.StatusDot
 import com.autohub.app.ui.components.AlertBanner
 import com.autohub.app.ui.components.AlertOverlay
@@ -72,10 +70,10 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
     var time by remember { mutableStateOf("") }
     var ampm by remember { mutableStateOf("") }
 
-    // Auto-HUD: activate at >45 MPH, deactivate at <10 MPH
+    // Auto-HUD: activate at >45 MPH (only when OBD is live), deactivate at <10 MPH
     val activeAlerts = remember(car) { checkAlerts(car) }
-    LaunchedEffect(car.speed) {
-        if (car.speed > 45 && !hudActive) {
+    LaunchedEffect(car.speed, car.obdConnected) {
+        if (car.obdConnected && car.speed > 45 && !hudActive) {
             kotlinx.coroutines.delay(5000)
             if (car.speed > 45) { previousTab = tab; hudActive = true; tab = "hud" }
         } else if (car.speed < 10 && hudActive) {
@@ -127,73 +125,38 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                 Modifier.fillMaxWidth()
                     .background(C.DockBg)
                     .border(width = 0.5.dp, C.DockBorder, RoundedCornerShape(0.dp))
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Speed
-                Text("${car.speed}", style = TextStyle(color = C.TextPrimary, fontSize = 30.sp, fontWeight = FontWeight.Thin, letterSpacing = (-0.5).sp))
-                Text(" MPH", style = TextStyle(color = C.TextMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold), modifier = Modifier.padding(bottom = 2.dp))
-                Spacer(Modifier.width(8.dp))
-
-                // Gear
+                // Speed + Gear (left cluster)
+                Text("${car.speed}", style = TextStyle(color = C.TextPrimary, fontSize = 28.sp, fontWeight = FontWeight.Thin, letterSpacing = (-0.5).sp))
+                Text(" MPH", style = TextStyle(color = C.TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier.padding(bottom = 2.dp))
+                Spacer(Modifier.width(10.dp))
                 Box(
-                    Modifier.size(30.dp).clip(RoundedCornerShape(6.dp))
+                    Modifier.size(28.dp).clip(RoundedCornerShape(6.dp))
                         .background(C.BlueDim)
                         .border(0.5.dp, C.Blue.copy(alpha = 0.2f), RoundedCornerShape(6.dp)),
                     contentAlignment = Alignment.Center
-                ) { Text(car.gear, style = TextStyle(color = C.Blue, fontSize = 16.sp, fontWeight = FontWeight.Light)) }
-                Spacer(Modifier.width(8.dp))
-
-                // RPM bar
-                Box(Modifier.width(100.dp)) {
-                    ProgressBar(car.rpm.toFloat(), 8000f,
-                        if (car.rpm > 5000) C.Red else C.Blue, 5.dp)
-                }
-                Text(" %.1fK".format(car.rpm / 1000f),
-                    style = TextStyle(color = C.TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier.padding(start = 4.dp))
+                ) { Text(car.gear, style = TextStyle(color = C.Blue, fontSize = 15.sp, fontWeight = FontWeight.Light)) }
 
                 Spacer(Modifier.weight(1f))
 
-                // Weather
-                Text("${car.weatherIcon} ${car.outsideTemp}\u00b0",
-                    style = TextStyle(fontSize = 14.sp, color = C.TextSecondary))
-                Spacer(Modifier.width(12.dp))
-                Box(Modifier.width(0.5.dp).height(16.dp).background(C.TextFaint))
-                Spacer(Modifier.width(12.dp))
-
-                // Signal bars
-                Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.Bottom) {
-                    for (i in 1..5) {
-                        Box(
-                            Modifier.width(4.dp).height((4 + i * 2f).dp)
-                                .clip(RoundedCornerShape(1.dp))
-                                .background(if (i <= car.signalStrength) C.Green else C.TextFaint)
-                        )
-                    }
-                }
-                Text(" ${car.phoneBattery}%", style = TextStyle(fontSize = 12.sp, color = C.TextSub), modifier = Modifier.padding(start = 4.dp))
-
-                Spacer(Modifier.width(12.dp))
-                Box(Modifier.width(0.5.dp).height(16.dp).background(C.TextFaint))
-                Spacer(Modifier.width(12.dp))
-
-                // Connection status: OBD (green) or DEMO (amber)
-                Icon(
-                    imageVector = Icons.Outlined.Bluetooth,
-                    contentDescription = "Bluetooth",
-                    tint = if (car.obdConnected) C.Green else Color(0xFFFFB300),
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(Modifier.width(3.dp))
+                // OBD status (center)
                 StatusDot(if (car.obdConnected) C.Green else Color(0xFFFFB300), 5.dp)
-                if (car.obdConnected) {
-                    Text(" OBD", style = TextStyle(color = C.Green, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp))
-                } else {
-                    Text(" DEMO", style = TextStyle(color = Color(0xFFFFB300), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp))
-                }
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    if (car.obdConnected) "OBD" else "NO OBD",
+                    style = TextStyle(
+                        color = if (car.obdConnected) C.Green else Color(0xFFFFB300),
+                        fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp
+                    )
+                )
 
-                // Clock
+                Spacer(Modifier.weight(1f))
+
+                // Temperature + Clock (right)
+                Text("${car.outsideTemp}\u00b0F", style = TextStyle(fontSize = 13.sp, color = C.TextSecondary))
+                Spacer(Modifier.width(14.dp))
                 Text(time, style = TextStyle(color = C.TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Thin, letterSpacing = (-0.5).sp))
                 Text(" $ampm", style = TextStyle(color = C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold))
             }
@@ -279,7 +242,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                                 "performance" -> PerformanceScreen(car)
                                 "vehicle" -> VehicleScreen(car)
                                 "climate" -> ClimateScreen(car)
-                                "media" -> MediaScreen(car)
+                                "media" -> MediaScreen(car, vm)
                                 "nav" -> NavScreen(car)
                                 "diagnostics" -> DiagnosticsScreen(car)
                                 "hud" -> HudScreen(car)

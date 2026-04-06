@@ -16,7 +16,6 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -84,13 +83,15 @@ data class CarState(
     val airflowMode: String = "Face",
 
     // ── Media ──
-    val mediaPlaying: Boolean = true,
-    val mediaTitle: String = "Blinding Lights",
-    val mediaArtist: String = "The Weeknd",
-    val mediaProgress: Float = 0.67f,
-    val mediaCurrent: String = "2:14", val mediaDuration: String = "3:20",
-    val mediaSource: String = "Bluetooth", val volume: Int = 65,
-    val eqBands: List<Float> = List(size = 16) { 0.3f + Random.nextFloat() * 0.7f },
+    val mediaPlaying: Boolean = false,
+    val mediaTitle: String = "No Track",
+    val mediaArtist: String = "Open Spotify to play music",
+    val mediaAlbum: String = "",
+    val mediaProgress: Float = 0f,
+    val mediaCurrent: String = "0:00", val mediaDuration: String = "0:00",
+    val mediaDurationMs: Long = 0L,
+    val mediaSource: String = "Spotify", val volume: Int = 65,
+    val eqBands: List<Float> = List(size = 16) { 0.1f },
 
     // ── Navigation / GPS ──
     val heading: Int = 247, val altitude: Int = 342,
@@ -190,22 +191,79 @@ class CarViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // ── Spotify broadcast receiver ─────────────────────────────
+    private val spotifyReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+            intent ?: return
+            try {
+                when (intent.action) {
+                    "com.spotify.music.metadatachanged" -> {
+                        val track = intent.getStringExtra("track") ?: return
+                        val artist = intent.getStringExtra("artist") ?: ""
+                        val album = intent.getStringExtra("album") ?: ""
+                        val length = intent.getLongExtra("length", 0L)
+                        val durationSec = (length / 1000).toInt()
+                        val durMin = durationSec / 60
+                        val durSec = durationSec % 60
+                        state = state.copy(
+                            mediaTitle = track,
+                            mediaArtist = artist,
+                            mediaAlbum = album,
+                            mediaDuration = "$durMin:${"%02d".format(durSec)}",
+                            mediaDurationMs = length,
+                            mediaSource = "Spotify",
+                        )
+                        Log.i(TAG, "Spotify track: $artist - $track")
+                    }
+                    "com.spotify.music.playbackstatechanged" -> {
+                        val playing = intent.getBooleanExtra("playing", false)
+                        val posMs = intent.getLongExtra("playbackPosition", 0L)
+                        val durMs = state.mediaDurationMs
+                        val progress = if (durMs > 0) (posMs.toFloat() / durMs.toFloat()).coerceIn(0f, 1f) else 0f
+                        val posSec = (posMs / 1000).toInt()
+                        state = state.copy(
+                            mediaPlaying = playing,
+                            mediaProgress = progress,
+                            mediaCurrent = "${posSec / 60}:${"%02d".format(posSec % 60)}",
+                        )
+                    }
+                    "com.spotify.music.queuechanged" -> {
+                        // Queue changed — no action needed
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Spotify broadcast error", e)
+            }
+        }
+    }
+
+    private var spotifyRegistered = false
+
     // ── Initialisation ───────────────────────────────────────────
 
     init {
-        // Simulation loop — always runs; produces DEMO data when OBD is offline,
-        // media-only updates when OBD is live
+        // Register Spotify broadcast receiver for real media data
+        try {
+            val filter = android.content.IntentFilter().apply {
+                addAction("com.spotify.music.metadatachanged")
+                addAction("com.spotify.music.playbackstatechanged")
+                addAction("com.spotify.music.queuechanged")
+            }
+            application.registerReceiver(spotifyReceiver, filter, android.content.Context.RECEIVER_EXPORTED)
+            spotifyRegistered = true
+            Log.i(TAG, "Spotify broadcast receiver registered")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to register Spotify receiver", e)
+        }
+
+        // Media-only simulation loop (EQ visualization + progress when no Spotify)
         viewModelScope.launch {
             while (true) {
                 delay(timeMillis = 2000L)
                 try {
-                    if (!obdLive) {
-                        simulate()
-                    } else {
-                        simulateMedia()
-                    }
+                    simulateMedia()
                 } catch (e: Exception) {
-                    Log.e(TAG, "Simulation tick error", e)
+                    Log.e(TAG, "Media tick error", e)
                 }
             }
         }
@@ -397,109 +455,57 @@ class CarViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // ── Simulation (DEMO mode) ───────────────────────────────────
-
     /**
-     * Full simulation tick — used when OBD is not connected.
-     * Speed oscillates around 45 MPH with realistic variation.
-     * RPM correlates to speed for the VW 8-speed:
-     *   idle ~800, 45 mph ~2000, 70 mph ~3500
-     */
-    private fun simulate() {
-        val s = state
-
-        // Speed drifts toward 45 MPH
-        val targetSpeed = 45f
-        val currentSpeed = s.speed.toFloat()
-        val drift = (targetSpeed - currentSpeed) * 0.1f + (Random.nextFloat() - 0.48f) * 4f
-        val spd = max(a = 0f, b = min(a = 130f, b = currentSpeed + drift)).roundToInt()
-
-        // RPM correlates to speed for 8-speed automatic
-        val newRpm = when {
-            spd < 2 -> 800 + Random.nextInt(50)
-            spd < 25 -> (800 + spd * 60 + Random.nextInt(200))
-                .coerceIn(minimumValue = 800, maximumValue = 3500)
-            spd < 50 -> (1200 + spd * 20 + Random.nextInt(200))
-                .coerceIn(minimumValue = 1400, maximumValue = 3000)
-            else -> (1000 + spd * 35 + Random.nextInt(250))
-                .coerceIn(minimumValue = 2000, maximumValue = 6500)
-        }
-
-        val gear = estimateGear(speedMph = spd, rpm = newRpm)
-
-        // Engine load simulation
-        val simLoad = (spd * 0.8f + Random.nextFloat() * 15f)
-            .coerceIn(minimumValue = 5f, maximumValue = 95f)
-        val simPower = (simLoad / 100f * MAX_HP).roundToInt()
-        val simTorque = (simLoad / 100f * MAX_TORQUE).roundToInt()
-
-        // MPG — realistic for 2.0T at ~45 mph
-        val simMpg = (s.mpg + (Random.nextFloat() - 0.48f) * 0.5f)
-            .coerceIn(minimumValue = 15f, maximumValue = 38f)
-
-        // Media progress
-        val newProg = if (s.mediaProgress >= 1f) 0f else s.mediaProgress + 0.01f
-        val progSec = (newProg * 200).toInt()
-
-        state = s.copy(
-            speed = spd,
-            rpm = newRpm,
-            gear = gear,
-            power = simPower,
-            torque = simTorque,
-            throttle = (simLoad + Random.nextFloat() * 5f)
-                .coerceIn(minimumValue = 0f, maximumValue = 100f),
-            fuel = max(a = 0f, b = s.fuel - Random.nextFloat() * 0.005f),
-            range = max(a = 0, b = s.range - if (Random.nextFloat() < 0.3f) 1 else 0),
-            mpg = simMpg,
-            avgMpg = s.avgMpg * 0.99f + simMpg * 0.01f,
-            trip = s.trip + spd * 0.00015f,
-            engineTemp = 190 + Random.nextInt(10),
-            oilTemp = 175 + Random.nextInt(10),
-            transTemp = 158 + Random.nextInt(14),
-            intakeTemp = 82 + Random.nextInt(12),
-            batteryTemp = 78 + Random.nextInt(10),
-            batteryVoltage = 12.4f + Random.nextFloat() * 0.4f,
-            alternatorVoltage = 13.8f + Random.nextFloat() * 0.6f,
-            oilPressure = 38 + Random.nextInt(10),
-            gForceX = (Random.nextFloat() - 0.5f) * 0.6f,
-            gForceY = (Random.nextFloat() - 0.5f) * 0.3f,
-            peakSpeed = max(a = s.peakSpeed, b = spd),
-            peakRpm = max(a = s.peakRpm, b = newRpm),
-            drivingScore = (82 + Random.nextInt(10))
-                .coerceIn(minimumValue = 70, maximumValue = 99),
-            speedHistory = (s.speedHistory + spd.toFloat()).takeLast(n = 20),
-            mpgHistory = (s.mpgHistory + simMpg).takeLast(n = 20),
-            mediaProgress = newProg,
-            mediaCurrent = "${progSec / 60}:${"%02d".format(progSec % 60)}",
-            eqBands = if (s.mediaPlaying) {
-                List(size = 16) { 0.15f + Random.nextFloat() * 0.85f }
-            } else {
-                List(size = 16) { 0.1f }
-            },
-            heading = (s.heading + Random.nextInt(3) - 1).mod(other = 360),
-            altitude = s.altitude + Random.nextInt(3) - 1,
-        )
-    }
-
-    /**
-     * Media-only simulation — runs when OBD is connected.
-     * We cannot read actual media state without NotificationListenerService.
+     * Media tick — only animates EQ bars when Spotify is playing.
+     * Progress/position are updated by Spotify broadcast, not simulated.
      */
     private fun simulateMedia() {
         val s = state
-        val newProg = if (s.mediaProgress >= 1f) 0f else s.mediaProgress + 0.01f
-        val progSec = (newProg * 200).toInt()
-
         state = s.copy(
-            mediaProgress = newProg,
-            mediaCurrent = "${progSec / 60}:${"%02d".format(progSec % 60)}",
             eqBands = if (s.mediaPlaying) {
                 List(size = 16) { 0.15f + Random.nextFloat() * 0.85f }
             } else {
                 List(size = 16) { 0.1f }
             },
         )
+    }
+
+    // ── Spotify playback control ────────────────────────────────
+
+    fun spotifyPlayPause() {
+        sendMediaKey(android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
+    }
+
+    fun spotifyNext() {
+        sendMediaKey(android.view.KeyEvent.KEYCODE_MEDIA_NEXT)
+    }
+
+    fun spotifyPrevious() {
+        sendMediaKey(android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS)
+    }
+
+    private fun sendMediaKey(keyCode: Int) {
+        try {
+            val am = getApplication<Application>()
+                .getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
+            am.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_DOWN, keyCode))
+            am.dispatchMediaKeyEvent(android.view.KeyEvent(android.view.KeyEvent.ACTION_UP, keyCode))
+        } catch (e: Exception) {
+            Log.e(TAG, "Media key dispatch error", e)
+        }
+    }
+
+    fun openSpotify() {
+        try {
+            val ctx = getApplication<Application>().applicationContext
+            val intent = ctx.packageManager.getLaunchIntentForPackage("com.spotify.music")
+            if (intent != null) {
+                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                ctx.startActivity(intent)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to open Spotify", e)
+        }
     }
 
     // ── Cleanup ──────────────────────────────────────────────────
@@ -507,6 +513,13 @@ class CarViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         obdManager.disconnect()
+        try {
+            if (spotifyRegistered) {
+                getApplication<Application>().unregisterReceiver(spotifyReceiver)
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Error unregistering Spotify receiver", e)
+        }
         try {
             locationManager?.removeUpdates(locationListener)
             locationManager?.unregisterGnssStatusCallback(gnssStatusCallback)
