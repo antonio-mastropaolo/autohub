@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,18 +35,27 @@ import com.autohub.app.ui.theme.C
 fun VehicleScreen(car: CarState) {
     var showTireDetail by remember { mutableStateOf(false) }
     var showBatteryDetail by remember { mutableStateOf(false) }
+    var viewIndex by remember { mutableIntStateOf(0) }
+    val views = listOf(
+        R.drawable.atlas_cross_sport_2024,
+        R.drawable.atlas_view_front,
+        R.drawable.atlas_view_side,
+        R.drawable.atlas_view_profile,
+    )
+    val viewLabels = listOf("3/4 VIEW", "FRONT", "SIDE", "PROFILE")
 
     Box(Modifier.fillMaxSize()) {
         // ═══════════════════════════════════════════════════════
-        //  HERO: Full-bleed Atlas Cross Sport with gradient fade
+        //  HERO: Full-bleed Atlas Cross Sport — tap to rotate
         // ═══════════════════════════════════════════════════════
         Box(
             Modifier.fillMaxWidth().height(340.dp)
                 .clip(RoundedCornerShape(14.dp))
+                .clickable { viewIndex = (viewIndex + 1) % views.size }
         ) {
-            // Car photo — fills the entire area
+            // Car render — fills the entire area
             Image(
-                painter = painterResource(R.drawable.atlas_cross_sport_2024),
+                painter = painterResource(views[viewIndex]),
                 contentDescription = "2024 VW Atlas Cross Sport",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -89,19 +99,29 @@ fun VehicleScreen(car: CarState) {
                     )
             )
 
+            // ── View label (top-center) ──
+            Text(
+                "TAP TO ROTATE  •  ${viewLabels[viewIndex]}",
+                style = TextStyle(
+                    fontSize = 8.sp, fontWeight = FontWeight.Bold,
+                    color = C.TextFaint, letterSpacing = 1.5.sp
+                ),
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 6.dp)
+            )
+
             // ── Title (top-left) ──
-            Column(Modifier.align(Alignment.TopStart).padding(12.dp)) {
+            Column(Modifier.align(Alignment.TopStart).padding(14.dp)) {
                 Text(
                     "ATLAS CROSS SPORT",
                     style = TextStyle(
-                        fontSize = 13.sp, fontWeight = FontWeight.Bold,
-                        color = C.Blue, letterSpacing = 2.5.sp
+                        fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                        color = C.Blue, letterSpacing = 3.sp
                     )
                 )
                 Text(
                     "2024 SEL R-LINE  •  2.0T TSI  •  4MOTION",
                     style = TextStyle(
-                        fontSize = 8.sp, fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp, fontWeight = FontWeight.Bold,
                         color = C.TextMuted, letterSpacing = 1.5.sp
                     )
                 )
@@ -207,16 +227,16 @@ fun VehicleScreen(car: CarState) {
 @Composable
 private fun FloatingPill(label: String, value: String, color: Color) {
     Row(
-        Modifier.clip(RoundedCornerShape(8.dp))
+        Modifier.clip(RoundedCornerShape(10.dp))
             .background(C.Background.copy(alpha = 0.75f))
-            .border(0.5.dp, color.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .border(0.5.dp, color.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
+            .padding(horizontal = 14.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        StatusDot(color, 4.dp)
-        Text(label, style = TextStyle(fontSize = 8.sp, fontWeight = FontWeight.Bold, color = C.TextMuted, letterSpacing = 0.8.sp))
-        Text(value, style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
+        StatusDot(color, 6.dp)
+        Text(label, style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = C.TextMuted, letterSpacing = 1.sp))
+        Text(value, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
     }
 }
 
@@ -225,26 +245,26 @@ private fun TirePill(pos: String, psi: Int) {
     val ok = psi in 32..38
     val color = if (ok) C.Green else C.Amber
     Row(
-        Modifier.clip(RoundedCornerShape(8.dp))
+        Modifier.clip(RoundedCornerShape(10.dp))
             .background(C.Background.copy(alpha = 0.75f))
-            .border(0.5.dp, color.copy(alpha = 0.2f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .border(0.5.dp, color.copy(alpha = 0.25f), RoundedCornerShape(10.dp))
+            .padding(horizontal = 14.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp)
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(pos, style = TextStyle(fontSize = 8.sp, fontWeight = FontWeight.Bold, color = C.TextMuted))
-        Text("$psi", style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Light, color = if (ok) C.TextPrimary else C.Amber))
-        Text("PSI", style = TextStyle(fontSize = 7.sp, fontWeight = FontWeight.Bold, color = C.TextMuted))
+        Text(pos, style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = C.TextMuted))
+        Text("$psi", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Light, color = if (ok) C.TextPrimary else C.Amber))
+        Text("PSI", style = TextStyle(fontSize = 9.sp, fontWeight = FontWeight.Bold, color = C.TextMuted))
     }
 }
 
 @Composable
 private fun BottomStat(label: String, value: String, color: Color) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value, style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-            StatusDot(color, 3.dp)
-            Text(label, style = TextStyle(fontSize = 7.sp, fontWeight = FontWeight.Bold, color = C.TextMuted, letterSpacing = 0.8.sp))
+        Text(value, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            StatusDot(color, 4.dp)
+            Text(label, style = TextStyle(fontSize = 9.sp, fontWeight = FontWeight.Bold, color = C.TextMuted, letterSpacing = 1.sp))
         }
     }
 }
