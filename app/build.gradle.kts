@@ -86,4 +86,7 @@ dependencies {
 
     // OpenStreetMap embedded map
     implementation("org.osmdroid:osmdroid-android:6.1.18")
+
+    // 3D model viewer (Filament-based)
+    implementation("io.github.sceneview:sceneview:2.2.1")
 }
