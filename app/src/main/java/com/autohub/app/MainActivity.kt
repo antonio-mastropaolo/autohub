@@ -125,7 +125,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                 Modifier.fillMaxWidth()
                     .background(C.DockBg)
                     .border(width = 0.5.dp, C.DockBorder, RoundedCornerShape(0.dp))
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                    .padding(horizontal = 14.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Speed + Gear (left cluster)
@@ -166,34 +166,34 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
             // ════════════════════════════════════════════════
             Row(Modifier.weight(1f)) {
 
-                // ── Navigation Dock ──
+                // ── Navigation Dock — narrow for 720p ──
                 Column(
-                    Modifier.width(88.dp).fillMaxHeight()
+                    Modifier.width(62.dp).fillMaxHeight()
                         .background(C.DockBg)
                         .border(width = 0.5.dp, C.DockBorder, RoundedCornerShape(0.dp))
-                        .padding(vertical = 6.dp),
+                        .padding(vertical = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Logo
                     Box(
-                        Modifier.size(48.dp).clip(RoundedCornerShape(10.dp))
+                        Modifier.size(36.dp).clip(RoundedCornerShape(8.dp))
                             .background(C.BlueDim)
-                            .border(0.5.dp, C.Blue.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+                            .border(0.5.dp, C.Blue.copy(alpha = 0.15f), RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Hub,
                             contentDescription = "AutoHub",
                             tint = C.Blue,
-                            modifier = Modifier.size(28.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
                     // Nav items
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                        verticalArrangement = Arrangement.spacedBy(0.dp)
                     ) {
                         DockItem(Icons.Outlined.Dashboard, "HOME", "dashboard", tab) { hudActive = false; tab = it }
                         DockItem(Icons.Outlined.Speed, "PERF", "performance", tab) { hudActive = false; tab = it }
@@ -210,7 +210,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                         imageVector = Icons.Outlined.Settings,
                         contentDescription = "Settings",
                         tint = C.TextMuted,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 }
 
@@ -258,15 +258,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                 }
             }
 
-            // ═══════════════════════════════════════════════
-            //  FOOTER
-            // ═══════════════════════════════════════════════
-            Box(Modifier.fillMaxWidth().padding(vertical = 4.dp), Alignment.Center) {
-                Text(
-                    "AUTOHUB OS 2.0  \u2022  VW ATLAS CROSS SPORT 2024  \u2022  OTTOCAST P3 PRO",
-                    style = TextStyle(color = C.TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
-                )
-            }
+            // Footer removed — maximize vertical space on 720p
         }
     }
 }
@@ -275,23 +267,23 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
 private fun DockItem(icon: ImageVector, label: String, id: String, activeTab: String, onTap: (String) -> Unit) {
     val active = activeTab == id
     Box(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable { onTap(id) }
-            .padding(vertical = 4.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).clickable { onTap(id) }
+            .padding(vertical = 2.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (active) {
-                Box(Modifier.width(3.dp).height(28.dp).clip(RoundedCornerShape(2.dp)).background(C.Blue))
-                Spacer(Modifier.width(4.dp))
+                Box(Modifier.width(2.5.dp).height(22.dp).clip(RoundedCornerShape(2.dp)).background(C.Blue))
+                Spacer(Modifier.width(2.dp))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
                     imageVector = icon,
                     contentDescription = label,
                     tint = if (active) C.Blue else C.TextMuted,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(24.dp)
                 )
-                Text(label, style = TextStyle(color = if (active) C.Blue else C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp))
+                Text(label, style = TextStyle(color = if (active) C.Blue else C.TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.3.sp))
             }
         }
     }

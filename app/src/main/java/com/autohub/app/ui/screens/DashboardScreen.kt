@@ -28,11 +28,10 @@ fun DashboardScreen(car: CarState) {
     var showTripDetail by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize()) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
 
             // ═══════════════════════════════════════════════════════
             //  PRIMARY: Speed + RPM + Gear — Atlas Cross Sport style
-            //  Clean, centered, maximum readability
             // ═══════════════════════════════════════════════════════
             GlassCard(Modifier.fillMaxWidth()) {
                 Row(
@@ -43,7 +42,7 @@ fun DashboardScreen(car: CarState) {
                     // RPM gauge (left)
                     ArcGauge(
                         car.rpm.toFloat(), 8000f, "RPM", "\u00d71000",
-                        if (car.rpm > 5000) C.Red else C.TextSub, size = 150.dp
+                        if (car.rpm > 5000) C.Red else C.TextSub, size = 120.dp
                     )
 
                     // Speed — large central readout
@@ -51,33 +50,33 @@ fun DashboardScreen(car: CarState) {
                         Text(
                             "${car.speed}",
                             style = TextStyle(
-                                fontSize = 80.sp,
+                                fontSize = 64.sp,
                                 fontWeight = FontWeight.Thin,
                                 color = C.TextPrimary,
-                                letterSpacing = (-3).sp,
+                                letterSpacing = (-2).sp,
                             )
                         )
                         Text(
                             "MPH",
                             style = TextStyle(
-                                fontSize = 14.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = C.TextMuted,
-                                letterSpacing = 4.sp,
+                                letterSpacing = 3.sp,
                             )
                         )
-                        Spacer(Modifier.height(10.dp))
+                        Spacer(Modifier.height(6.dp))
                         // Gear badge
                         Box(
-                            Modifier.size(48.dp).clip(RoundedCornerShape(12.dp))
+                            Modifier.size(38.dp).clip(RoundedCornerShape(10.dp))
                                 .background(C.BlueDim)
-                                .border(1.dp, C.Blue.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
+                                .border(1.dp, C.Blue.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 car.gear,
                                 style = TextStyle(
-                                    fontSize = 26.sp,
+                                    fontSize = 22.sp,
                                     fontWeight = FontWeight.ExtraLight,
                                     color = C.Blue
                                 )
@@ -88,7 +87,7 @@ fun DashboardScreen(car: CarState) {
                     // Fuel gauge (right)
                     ArcGauge(
                         car.fuel, 100f, "FUEL", "%",
-                        if (car.fuel > 25f) C.Green else C.Red, size = 150.dp
+                        if (car.fuel > 25f) C.Green else C.Red, size = 120.dp
                     )
                 }
             }
@@ -96,7 +95,7 @@ fun DashboardScreen(car: CarState) {
             // ═══════════════════════════════════════════════════════
             //  SECONDARY: Key stats — clean horizontal strip
             // ═══════════════════════════════════════════════════════
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 CleanStatCard(
                     "Range", "${car.range}", "mi",
                     if (car.range > 80) C.Green else C.Amber,
@@ -190,17 +189,17 @@ private fun CleanStatCard(
     GlassCard(modifier) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            StatusDot(color, 5.dp)
+            StatusDot(color, 4.dp)
             LabelText(label)
         }
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(2.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 value,
                 style = TextStyle(
-                    fontSize = 22.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Thin,
                     color = C.TextPrimary
                 )
@@ -208,11 +207,11 @@ private fun CleanStatCard(
             Text(
                 unit,
                 style = TextStyle(
-                    fontSize = 10.sp,
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     color = C.TextMuted
                 ),
-                modifier = Modifier.padding(start = 2.dp, bottom = 2.dp)
+                modifier = Modifier.padding(start = 2.dp, bottom = 1.dp)
             )
         }
     }

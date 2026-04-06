@@ -43,11 +43,11 @@ fun GlassCard(
 ) {
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(C.SurfaceAlpha)
-            .border(1.dp, C.GlassBorder, RoundedCornerShape(14.dp))
+            .border(0.5.dp, C.GlassBorder, RoundedCornerShape(12.dp))
     ) {
-        Column(Modifier.padding(14.dp)) { content() }
+        Column(Modifier.padding(10.dp)) { content() }
     }
 }
 
@@ -56,8 +56,8 @@ fun LabelText(text: String) {
     Text(
         text.uppercase(),
         style = TextStyle(
-            fontSize = 12.sp, fontWeight = FontWeight.Bold,
-            color = C.TextMuted, letterSpacing = 1.2.sp
+            fontSize = 10.sp, fontWeight = FontWeight.Bold,
+            color = C.TextMuted, letterSpacing = 1.sp
         )
     )
 }
@@ -167,15 +167,17 @@ fun ArcGauge(
             drawCircle(C.Surface, 7f, Offset(cx, cy))
             drawCircle(color, 7f, Offset(cx, cy), style = Stroke(1.5f))
 
-            // Value text
+            // Value text — scales with gauge size
+            val valueFontSize = if (size <= 130.dp) 28.sp else 40.sp
             val vl = tm.measure(value.toInt().toString(),
-                TextStyle(color = C.TextPrimary, fontSize = 40.sp, fontWeight = FontWeight.ExtraLight, textAlign = TextAlign.Center))
-            drawText(vl, topLeft = Offset(cx - vl.size.width / 2f, cy + 12f))
+                TextStyle(color = C.TextPrimary, fontSize = valueFontSize, fontWeight = FontWeight.ExtraLight, textAlign = TextAlign.Center))
+            drawText(vl, topLeft = Offset(cx - vl.size.width / 2f, cy + 8f))
 
             // Unit text
+            val unitFontSize = if (size <= 130.dp) 10.sp else 14.sp
             val ul = tm.measure(unit,
-                TextStyle(color = C.TextMuted, fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, textAlign = TextAlign.Center))
-            drawText(ul, topLeft = Offset(cx - ul.size.width / 2f, cy + 48f))
+                TextStyle(color = C.TextMuted, fontSize = unitFontSize, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, textAlign = TextAlign.Center))
+            drawText(ul, topLeft = Offset(cx - ul.size.width / 2f, cy + 8f + vl.size.height))
         }
 
         Text(label, style = TextStyle(color = C.TextSub, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp),
