@@ -293,7 +293,6 @@ fun DiagnosticsScreen(car: CarState) {
 
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.verticalScroll(scrollState)
     ) {
 
         // ── Top Section: Status Card ──────────────────────────────
