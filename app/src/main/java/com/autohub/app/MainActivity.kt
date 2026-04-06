@@ -44,6 +44,9 @@ import com.autohub.app.data.CarViewModel
 import com.autohub.app.ui.components.LabelText
 import com.autohub.app.ui.components.ProgressBar
 import com.autohub.app.ui.components.StatusDot
+import com.autohub.app.ui.components.AlertBanner
+import com.autohub.app.ui.components.AlertOverlay
+import com.autohub.app.ui.components.checkAlerts
 import com.autohub.app.ui.screens.*
 import com.autohub.app.ui.theme.C
 import java.util.*
@@ -64,8 +67,22 @@ class MainActivity : ComponentActivity() {
 fun AutoHubOS(vm: CarViewModel = viewModel()) {
     val car = vm.state
     var tab by remember { mutableStateOf("dashboard") }
+    var previousTab by remember { mutableStateOf("dashboard") }
+    var hudActive by remember { mutableStateOf(false) }
     var time by remember { mutableStateOf("") }
     var ampm by remember { mutableStateOf("") }
+
+    // Auto-HUD: activate at >45 MPH, deactivate at <10 MPH
+    val activeAlerts = remember(car) { checkAlerts(car) }
+    LaunchedEffect(car.speed) {
+        if (car.speed > 45 && !hudActive) {
+            kotlinx.coroutines.delay(5000)
+            if (car.speed > 45) { previousTab = tab; hudActive = true; tab = "hud" }
+        } else if (car.speed < 10 && hudActive) {
+            kotlinx.coroutines.delay(5000)
+            if (car.speed < 10) { hudActive = false; tab = previousTab }
+        }
+    }
 
     val context = LocalContext.current
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -214,12 +231,14 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        DockItem(Icons.Outlined.Dashboard, "HOME", "dashboard", tab) { tab = it }
-                        DockItem(Icons.Outlined.Speed, "PERF", "performance", tab) { tab = it }
-                        DockItem(Icons.Outlined.DirectionsCar, "CAR", "vehicle", tab) { tab = it }
-                        DockItem(Icons.Outlined.AcUnit, "HVAC", "climate", tab) { tab = it }
-                        DockItem(Icons.Outlined.MusicNote, "MEDIA", "media", tab) { tab = it }
-                        DockItem(Icons.Outlined.Explore, "NAV", "nav", tab) { tab = it }
+                        DockItem(Icons.Outlined.Dashboard, "HOME", "dashboard", tab) { hudActive = false; tab = it }
+                        DockItem(Icons.Outlined.Speed, "PERF", "performance", tab) { hudActive = false; tab = it }
+                        DockItem(Icons.Outlined.DirectionsCar, "CAR", "vehicle", tab) { hudActive = false; tab = it }
+                        DockItem(Icons.Outlined.AcUnit, "HVAC", "climate", tab) { hudActive = false; tab = it }
+                        DockItem(Icons.Outlined.MusicNote, "MEDIA", "media", tab) { hudActive = false; tab = it }
+                        DockItem(Icons.Outlined.Explore, "NAV", "nav", tab) { hudActive = false; tab = it }
+                        DockItem(Icons.Outlined.Build, "DIAG", "diagnostics", tab) { hudActive = false; tab = it }
+                        DockItem(Icons.Outlined.Visibility, "HUD", "hud", tab) { hudActive = true; tab = it }
                     }
 
                     // Settings
@@ -232,27 +251,45 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                 }
 
                 // ── Main Content ──
-                Box(
-                    Modifier.weight(1f).fillMaxHeight()
-                        .padding(start = 8.dp, end = 12.dp, top = 8.dp, bottom = 4.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    AnimatedContent(
-                        targetState = tab,
-                        transitionSpec = {
-                            fadeIn(tween(200)) + slideInVertically(tween(250)) { 20 } togetherWith
-                                fadeOut(tween(150))
-                        },
-                        label = "screen"
-                    ) { t ->
-                        when (t) {
-                            "dashboard" -> DashboardScreen(car)
-                            "performance" -> PerformanceScreen(car)
-                            "vehicle" -> VehicleScreen(car)
-                            "climate" -> ClimateScreen(car)
-                            "media" -> MediaScreen(car)
-                            "nav" -> NavScreen(car)
+                Column(Modifier.weight(1f).fillMaxHeight()) {
+                    // Alert banner (between status bar and content)
+                    if (activeAlerts.isNotEmpty()) {
+                        AlertBanner(
+                            alerts = activeAlerts,
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+
+                    Box(
+                        Modifier.weight(1f).fillMaxWidth()
+                            .padding(start = 8.dp, end = 12.dp, top = if (activeAlerts.isEmpty()) 8.dp else 4.dp, bottom = 4.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        AnimatedContent(
+                            targetState = tab,
+                            transitionSpec = {
+                                fadeIn(tween(200)) + slideInVertically(tween(250)) { 20 } togetherWith
+                                    fadeOut(tween(150))
+                            },
+                            label = "screen"
+                        ) { t ->
+                            when (t) {
+                                "dashboard" -> DashboardScreen(car)
+                                "performance" -> PerformanceScreen(car)
+                                "vehicle" -> VehicleScreen(car)
+                                "climate" -> ClimateScreen(car)
+                                "media" -> MediaScreen(car)
+                                "nav" -> NavScreen(car)
+                                "diagnostics" -> DiagnosticsScreen(car)
+                                "hud" -> HudScreen(car)
+                            }
                         }
+                    }
+
+                    // Critical alert overlay
+                    val criticalAlerts = activeAlerts.filter { it.rule.tier == 3 }
+                    if (criticalAlerts.isNotEmpty()) {
+                        AlertOverlay(alerts = criticalAlerts, modifier = Modifier.fillMaxWidth())
                     }
                 }
             }
