@@ -77,7 +77,7 @@ fun Pill(text: String, color: Color) {
     ) {
         Text(
             text.uppercase(),
-            TextStyle(7.sp, FontWeight.Bold, color, letterSpacing = 0.8.sp)
+            style = TextStyle(color = color, fontSize = 7.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
         )
     }
 }
@@ -128,21 +128,21 @@ fun ArcGauge(
             drawCircle(Color.White.copy(alpha = 0.02f), r + 6f, Offset(cx, cy), style = Stroke(0.5f))
 
             // Background track
-            drawArc(Color.White.copy(alpha = 0.04f), start, sweep, false,
-                Stroke(sw, cap = StrokeCap.Round),
-                Offset(cx - r, cy - r), Size(r * 2, r * 2))
+            drawArc(color = Color.White.copy(alpha = 0.04f), startAngle = start, sweepAngle = sweep, useCenter = false,
+                style = Stroke(sw, cap = StrokeCap.Round),
+                topLeft = Offset(cx - r, cy - r), size = Size(r * 2, r * 2))
 
             // Glow arc
-            drawArc(color.copy(alpha = 0.1f), start, sweep * pct, false,
-                Stroke(sw + 10f, cap = StrokeCap.Round),
-                Offset(cx - r, cy - r), Size(r * 2, r * 2))
+            drawArc(color = color.copy(alpha = 0.1f), startAngle = start, sweepAngle = sweep * pct, useCenter = false,
+                style = Stroke(sw + 10f, cap = StrokeCap.Round),
+                topLeft = Offset(cx - r, cy - r), size = Size(r * 2, r * 2))
 
             // Active arc
             drawArc(
-                Brush.sweepGradient(listOf(color.copy(alpha = 0.6f), color), Offset(cx, cy)),
-                start, sweep * pct, false,
-                Stroke(sw, cap = StrokeCap.Round),
-                Offset(cx - r, cy - r), Size(r * 2, r * 2))
+                brush = Brush.sweepGradient(listOf(color.copy(alpha = 0.6f), color), Offset(cx, cy)),
+                startAngle = start, sweepAngle = sweep * pct, useCenter = false,
+                style = Stroke(sw, cap = StrokeCap.Round),
+                topLeft = Offset(cx - r, cy - r), size = Size(r * 2, r * 2))
 
             // Tick marks
             for (i in 0..26) {
@@ -169,17 +169,17 @@ fun ArcGauge(
 
             // Value text
             val vl = tm.measure(value.toInt().toString(),
-                TextStyle(28.sp, FontWeight.ExtraLight, C.TextPrimary, textAlign = TextAlign.Center))
+                TextStyle(color = C.TextPrimary, fontSize = 28.sp, fontWeight = FontWeight.ExtraLight, textAlign = TextAlign.Center))
             drawText(vl, Offset(cx - vl.size.width / 2f, cy + 14f))
 
             // Unit text
             val ul = tm.measure(unit,
-                TextStyle(9.sp, FontWeight.Bold, C.TextMuted, letterSpacing = 1.sp, textAlign = TextAlign.Center))
+                TextStyle(color = C.TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, textAlign = TextAlign.Center))
             drawText(ul, Offset(cx - ul.size.width / 2f, cy + 42f))
         }
 
-        Text(label, TextStyle(8.sp, FontWeight.Bold, C.TextSub, letterSpacing = 1.2.sp),
-            Modifier.offset(y = (-4).dp))
+        Text(label, style = TextStyle(color = C.TextSub, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp),
+            modifier = Modifier.offset(y = (-4).dp))
     }
 }
 
@@ -198,12 +198,12 @@ fun MiniRingGauge(
     Canvas(modifier.size(size)) {
         val cx = this.size.width / 2f; val cy = this.size.height / 2f
         val r = this.size.minDimension / 2f - 4f
-        drawArc(Color.White.copy(alpha = 0.05f), 135f, 270f, false,
-            Stroke(3f, cap = StrokeCap.Round),
-            Offset(cx - r, cy - r), Size(r * 2, r * 2))
-        drawArc(color, 135f, 270f * pct, false,
-            Stroke(3f, cap = StrokeCap.Round),
-            Offset(cx - r, cy - r), Size(r * 2, r * 2))
+        drawArc(color = Color.White.copy(alpha = 0.05f), startAngle = 135f, sweepAngle = 270f, useCenter = false,
+            style = Stroke(3f, cap = StrokeCap.Round),
+            topLeft = Offset(cx - r, cy - r), size = Size(r * 2, r * 2))
+        drawArc(color = color, startAngle = 135f, sweepAngle = 270f * pct, useCenter = false,
+            style = Stroke(3f, cap = StrokeCap.Round),
+            topLeft = Offset(cx - r, cy - r), size = Size(r * 2, r * 2))
     }
 }
 
@@ -256,7 +256,7 @@ fun GForceIndicator(
         drawCircle(color.copy(alpha = 0.2f), 10f, Offset(dx, dy))
         drawCircle(color, 4f, Offset(dx, dy))
 
-        val gl = tm.measure("G", TextStyle(6.sp, FontWeight.Bold, C.TextMuted))
+        val gl = tm.measure("G", TextStyle(color = C.TextMuted, fontSize = 6.sp, fontWeight = FontWeight.Bold))
         drawText(gl, Offset(cx - gl.size.width / 2f, cy + r + 2f))
     }
 }
@@ -299,14 +299,14 @@ fun CompassRose(
             val a = Math.toRadians((bearing - heading - 90).toDouble())
             val lr = r - 26f
             val isN = lbl == "N"
-            val lay = tm.measure(lbl, TextStyle(if (isN) 13.sp else 9.sp, FontWeight.Bold, if (isN) color else C.TextSub))
+            val lay = tm.measure(lbl, TextStyle(color = if (isN) color else C.TextSub, fontSize = if (isN) 13.sp else 9.sp, fontWeight = FontWeight.Bold))
             val px = cx + cos(a).toFloat() * lr - lay.size.width / 2f
             val py = cy + sin(a).toFloat() * lr - lay.size.height / 2f
             drawText(lay, Offset(px, py))
         }
 
         // Center heading value
-        val hl = tm.measure("$heading\u00b0", TextStyle(24.sp, FontWeight.Thin, C.TextPrimary, textAlign = TextAlign.Center))
+        val hl = tm.measure("$heading\u00b0", TextStyle(color = C.TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Thin, textAlign = TextAlign.Center))
         drawText(hl, Offset(cx - hl.size.width / 2f, cy - hl.size.height / 2f))
     }
 }
@@ -329,14 +329,14 @@ fun TempKnob(
         val r = this.size.minDimension / 2f - 12f
 
         drawCircle(color.copy(alpha = 0.04f), r + 10f, Offset(cx, cy))
-        drawArc(C.Glass, 120f, 300f, false, Stroke(4f, cap = StrokeCap.Round),
-            Offset(cx - r, cy - r), Size(r * 2, r * 2))
-        drawArc(color, 120f, 300f * pct, false, Stroke(4f, cap = StrokeCap.Round),
-            Offset(cx - r, cy - r), Size(r * 2, r * 2))
+        drawArc(color = C.Glass, startAngle = 120f, sweepAngle = 300f, useCenter = false, style = Stroke(4f, cap = StrokeCap.Round),
+            topLeft = Offset(cx - r, cy - r), size = Size(r * 2, r * 2))
+        drawArc(color = color, startAngle = 120f, sweepAngle = 300f * pct, useCenter = false, style = Stroke(4f, cap = StrokeCap.Round),
+            topLeft = Offset(cx - r, cy - r), size = Size(r * 2, r * 2))
 
-        val vl = tm.measure("$value", TextStyle(30.sp, FontWeight.Thin, C.TextPrimary, textAlign = TextAlign.Center))
+        val vl = tm.measure("$value", TextStyle(color = C.TextPrimary, fontSize = 30.sp, fontWeight = FontWeight.Thin, textAlign = TextAlign.Center))
         drawText(vl, Offset(cx - vl.size.width / 2f, cy - vl.size.height / 2f - 4f))
-        val ul = tm.measure("\u00b0F", TextStyle(10.sp, FontWeight.SemiBold, C.TextMuted, textAlign = TextAlign.Center))
+        val ul = tm.measure("\u00b0F", TextStyle(color = C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center))
         drawText(ul, Offset(cx - ul.size.width / 2f, cy + vl.size.height / 2f - 10f))
     }
 }

@@ -38,7 +38,7 @@ fun NavScreen(car: CarState) {
                     else -> "NW"
                 }
                 Row(Modifier.fillMaxWidth(), Arrangement.Center) {
-                    Text("${car.heading}\u00b0 $dir", TextStyle(12.sp, FontWeight.Light, C.TextSecondary))
+                    Text("${car.heading}\u00b0 $dir", style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Light, color = C.TextSecondary))
                 }
             }
 
@@ -74,9 +74,9 @@ fun NavScreen(car: CarState) {
                 LabelText("CURRENT SPEED")
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text("${car.speed}", TextStyle(28.sp, FontWeight.Thin, C.TextPrimary))
-                    Text(" MPH", TextStyle(10.sp, FontWeight.Bold, C.TextMuted),
-                        Modifier.padding(bottom = 4.dp))
+                    Text("${car.speed}", style = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Thin, color = C.TextPrimary))
+                    Text(" MPH", style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
+                        modifier = Modifier.padding(bottom = 4.dp))
                 }
             }
             GlassCard(Modifier.weight(1f)) {
@@ -84,10 +84,10 @@ fun NavScreen(car: CarState) {
                 Spacer(Modifier.height(4.dp))
                 val over = car.speed > car.speedLimit
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text("${car.speedLimit}", TextStyle(28.sp, FontWeight.Thin,
-                        if (over) C.Red else C.TextPrimary))
-                    Text(" MPH", TextStyle(10.sp, FontWeight.Bold, C.TextMuted),
-                        Modifier.padding(bottom = 4.dp))
+                    Text("${car.speedLimit}", style = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Thin,
+                        color = if (over) C.Red else C.TextPrimary))
+                    Text(" MPH", style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
+                        modifier = Modifier.padding(bottom = 4.dp))
                 }
                 if (over) {
                     Spacer(Modifier.height(3.dp))
@@ -114,9 +114,9 @@ private fun GpsRow(label: String, value: String, color: Color) {
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             StatusDot(color, 3.dp)
-            Text(label, TextStyle(10.sp, color = C.TextSub, fontWeight = FontWeight.Medium))
+            Text(label, style = TextStyle(fontSize = 10.sp, color = C.TextSub, fontWeight = FontWeight.Medium))
         }
-        Text(value, TextStyle(10.sp, FontWeight.Light, C.TextPrimary))
+        Text(value, style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
     }
 }
 
@@ -126,7 +126,7 @@ private fun TripRow(label: String, value: String) {
         Modifier.fillMaxWidth().padding(vertical = 2.dp),
         Arrangement.SpaceBetween
     ) {
-        Text(label, TextStyle(9.sp, color = C.TextSub))
-        Text(value, TextStyle(9.sp, FontWeight.Light, C.TextPrimary))
+        Text(label, style = TextStyle(fontSize = 9.sp, color = C.TextSub))
+        Text(value, style = TextStyle(fontSize = 9.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
     }
 }

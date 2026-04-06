@@ -94,8 +94,8 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Speed
-                Text("${car.speed}", TextStyle(22.sp, FontWeight.Thin, C.TextPrimary, letterSpacing = (-0.5).sp))
-                Text(" MPH", TextStyle(8.sp, FontWeight.Bold, C.TextMuted), Modifier.padding(bottom = 2.dp))
+                Text("${car.speed}", TextStyle(color = C.TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Thin, letterSpacing = (-0.5).sp))
+                Text(" MPH", TextStyle(color = C.TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold), Modifier.padding(bottom = 2.dp))
                 Spacer(Modifier.width(8.dp))
 
                 // Gear
@@ -104,7 +104,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                         .background(C.BlueDim)
                         .border(0.5.dp, C.Blue.copy(alpha = 0.2f), RoundedCornerShape(5.dp)),
                     contentAlignment = Alignment.Center
-                ) { Text(car.gear, TextStyle(10.sp, FontWeight.Light, C.Blue)) }
+                ) { Text(car.gear, TextStyle(color = C.Blue, fontSize = 10.sp, fontWeight = FontWeight.Light)) }
                 Spacer(Modifier.width(8.dp))
 
                 // RPM bar
@@ -113,13 +113,13 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                         if (car.rpm > 5000) C.Red else C.Blue, 4.dp)
                 }
                 Text(" %.1fK".format(car.rpm / 1000f),
-                    TextStyle(7.sp, FontWeight.Bold, C.TextMuted), Modifier.padding(start = 4.dp))
+                    TextStyle(color = C.TextMuted, fontSize = 7.sp, fontWeight = FontWeight.Bold), Modifier.padding(start = 4.dp))
 
                 Spacer(Modifier.weight(1f))
 
                 // Weather
                 Text("${car.weatherIcon} ${car.outsideTemp}\u00b0",
-                    TextStyle(10.sp, color = C.TextSecondary))
+                    TextStyle(fontSize = 10.sp, color = C.TextSecondary))
                 Spacer(Modifier.width(12.dp))
                 Box(Modifier.width(0.5.dp).height(14.dp).background(C.TextFaint))
                 Spacer(Modifier.width(12.dp))
@@ -134,7 +134,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                         )
                     }
                 }
-                Text(" ${car.phoneBattery}%", TextStyle(8.sp, color = C.TextSub), Modifier.padding(start = 4.dp))
+                Text(" ${car.phoneBattery}%", TextStyle(fontSize = 8.sp, color = C.TextSub), Modifier.padding(start = 4.dp))
 
                 Spacer(Modifier.width(12.dp))
                 Box(Modifier.width(0.5.dp).height(14.dp).background(C.TextFaint))
@@ -142,12 +142,12 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
 
                 // Live
                 StatusDot(C.Green, 4.dp)
-                Text(" LIVE", TextStyle(6.sp, FontWeight.Bold, C.TextMuted, letterSpacing = 0.6.sp))
+                Text(" LIVE", TextStyle(color = C.TextMuted, fontSize = 6.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp))
                 Spacer(Modifier.width(8.dp))
 
                 // Clock
-                Text(time, TextStyle(16.sp, FontWeight.Thin, C.TextPrimary, letterSpacing = (-0.5).sp))
-                Text(" $ampm", TextStyle(6.sp, FontWeight.Bold, C.TextMuted))
+                Text(time, TextStyle(color = C.TextPrimary, fontSize = 16.sp, fontWeight = FontWeight.Thin, letterSpacing = (-0.5).sp))
+                Text(" $ampm", TextStyle(color = C.TextMuted, fontSize = 6.sp, fontWeight = FontWeight.Bold))
             }
 
             // ════════════════════════════���══════════════════
@@ -170,7 +170,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                             .background(C.BlueDim)
                             .border(0.5.dp, C.Blue.copy(alpha = 0.15f), RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center
-                    ) { Text("\u25c8", TextStyle(12.sp, color = C.Blue)) }
+                    ) { Text("\u25c8", TextStyle(fontSize = 12.sp, color = C.Blue)) }
 
                     // Nav items
                     Column(
@@ -186,7 +186,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                     }
 
                     // Settings
-                    Text("\u2699", TextStyle(14.sp, color = C.TextMuted))
+                    Text("\u2699", TextStyle(fontSize = 14.sp, color = C.TextMuted))
                 }
 
                 // ── Main Content ──
@@ -221,7 +221,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
             Box(Modifier.fillMaxWidth().padding(vertical = 4.dp), Alignment.Center) {
                 Text(
                     "AUTOHUB OS 2.0  \u2022  OTTOCAST P3 PRO  \u2022  SNAPDRAGON 6225  \u2022  ANDROID 13",
-                    TextStyle(5.sp, FontWeight.Bold, C.TextMuted, letterSpacing = 1.4.sp)
+                    TextStyle(color = C.TextMuted, fontSize = 5.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
                 )
             }
         }
@@ -242,8 +242,8 @@ private fun DockItem(icon: String, label: String, id: String, activeTab: String,
                 Spacer(Modifier.width(3.dp))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(icon, TextStyle(14.sp, color = if (active) C.Blue else C.TextMuted))
-                Text(label, TextStyle(5.sp, FontWeight.Bold, if (active) C.Blue else C.TextMuted, letterSpacing = 0.5.sp))
+                Text(icon, TextStyle(fontSize = 14.sp, color = if (active) C.Blue else C.TextMuted))
+                Text(label, TextStyle(color = if (active) C.Blue else C.TextMuted, fontSize = 5.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp))
             }
         }
     }

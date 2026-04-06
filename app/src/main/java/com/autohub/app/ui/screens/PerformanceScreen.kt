@@ -60,8 +60,8 @@ fun PerformanceScreen(car: CarState) {
                 )
                 Spacer(Modifier.height(4.dp))
                 Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-                    Text("2m ago", TextStyle(6.sp, color = C.TextMuted))
-                    Text("now", TextStyle(6.sp, color = C.TextMuted))
+                    Text("2m ago", style = TextStyle(fontSize = 6.sp, color = C.TextMuted))
+                    Text("now", style = TextStyle(fontSize = 6.sp, color = C.TextMuted))
                 }
             }
         }
@@ -77,9 +77,9 @@ private fun PerfStatCard(
         LabelText(label)
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, TextStyle(20.sp, FontWeight.ExtraLight, C.TextPrimary))
-            Text(unit, TextStyle(7.sp, FontWeight.Bold, C.TextMuted),
-                Modifier.padding(start = 2.dp, bottom = 3.dp))
+            Text(value, style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraLight, color = C.TextPrimary))
+            Text(unit, style = TextStyle(fontSize = 7.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
+                modifier = Modifier.padding(start = 2.dp, bottom = 3.dp))
         }
         Spacer(Modifier.height(4.dp))
         ProgressBar(pct, 1f, color)
@@ -94,8 +94,8 @@ private fun RecordRow(label: String, value: String, color: Color) {
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             StatusDot(color, 3.dp)
-            Text(label, TextStyle(10.sp, color = C.TextSub, fontWeight = FontWeight.Medium))
+            Text(label, style = TextStyle(fontSize = 10.sp, color = C.TextSub, fontWeight = FontWeight.Medium))
         }
-        Text(value, TextStyle(11.sp, FontWeight.Light, C.TextPrimary))
+        Text(value, style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
     }
 }
