@@ -74,17 +74,17 @@ fun CarTopViewCanvas(
 
             // PSI value
             val psiL = tm.measure(t.psi.toString(),
-                style = TextStyle(color = if (ok) C.TextPrimary else C.Amber, fontSize = 13.sp, fontWeight = FontWeight.Light, textAlign = TextAlign.Center))
+                style = TextStyle(color = if (ok) C.TextPrimary else C.Amber, fontSize = 15.sp, fontWeight = FontWeight.Light, textAlign = TextAlign.Center))
             drawText(psiL, topLeft = Offset(t.x - psiL.size.width / 2f, t.y - psiL.size.height / 2f - 4f))
 
             // Temperature
             val tempL = tm.measure("${t.temp}\u00b0",
-                style = TextStyle(color = C.TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center))
+                style = TextStyle(color = C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center))
             drawText(tempL, topLeft = Offset(t.x - tempL.size.width / 2f, t.y + 4f))
 
             // Label
             val lblL = tm.measure(t.label,
-                style = TextStyle(color = C.TextMuted, fontSize = 7.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, letterSpacing = 0.5.sp))
+                style = TextStyle(color = C.TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, letterSpacing = 0.5.sp))
             drawText(lblL, topLeft = Offset(t.x - lblL.size.width / 2f, t.y + th / 2f + 3f))
         }
     }

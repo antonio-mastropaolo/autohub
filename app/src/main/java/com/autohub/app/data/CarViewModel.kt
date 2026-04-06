@@ -152,17 +152,21 @@ class CarViewModel(application: Application) : AndroidViewModel(application) {
 
     private val locationListener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
-            state = state.copy(
-                latitude = location.latitude.toFloat(),
-                longitude = location.longitude.toFloat(),
-                altitude = location.altitude.toInt(),
-                heading = location.bearing.toInt(),
-                gpsActive = true,
-            )
-            // Use GPS speed when OBD is not providing it
-            if (!obdLive && location.hasSpeed()) {
-                val gpsSpeedMph = (location.speed * 2.23694f).roundToInt()
-                state = state.copy(speed = gpsSpeedMph)
+            try {
+                state = state.copy(
+                    latitude = location.latitude.toFloat(),
+                    longitude = location.longitude.toFloat(),
+                    altitude = location.altitude.toInt(),
+                    heading = location.bearing.toInt(),
+                    gpsActive = true,
+                )
+                // Use GPS speed when OBD is not providing it
+                if (!obdLive && location.hasSpeed()) {
+                    val gpsSpeedMph = (location.speed * 2.23694f).roundToInt()
+                    state = state.copy(speed = gpsSpeedMph)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Location update error", e)
             }
         }
 
@@ -194,10 +198,14 @@ class CarViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             while (true) {
                 delay(timeMillis = 2000L)
-                if (!obdLive) {
-                    simulate()
-                } else {
-                    simulateMedia()
+                try {
+                    if (!obdLive) {
+                        simulate()
+                    } else {
+                        simulateMedia()
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Simulation tick error", e)
                 }
             }
         }
@@ -217,26 +225,36 @@ class CarViewModel(application: Application) : AndroidViewModel(application) {
         // Collect OBD readings and map to CarState
         viewModelScope.launch {
             obdManager.reading.collect { reading ->
-                if (obdLive) {
-                    applyObdReading(reading = reading)
+                try {
+                    if (obdLive) {
+                        applyObdReading(reading = reading)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "OBD reading apply error", e)
                 }
             }
         }
 
-        // Auto-connect to paired OBD adapter after a short delay
+        // Auto-connect to OBD adapter after a short delay
+        // Uses connectAny() which checks paired devices first, then scans BLE
+        // for unpaired adapters like the Hyper Tough HT500
         viewModelScope.launch {
-            delay(timeMillis = 2000L)
+            delay(timeMillis = 3000L)
             try {
-                val devices = obdManager.getObdDevices()
-                if (devices.isNotEmpty()) {
-                    val device = devices.first()
-                    Log.i(TAG, "Found OBD device: ${device.name ?: "unknown"} — connecting")
-                    obdManager.connect(device = device)
-                } else {
-                    Log.i(TAG, "No paired OBD devices found — running in DEMO mode")
-                }
+                Log.i(TAG, "Starting OBD auto-connect (paired + BLE scan)...")
+                obdManager.connectAny()
             } catch (e: Exception) {
                 Log.e(TAG, "OBD auto-connect failed", e)
+            }
+            // Retry once after 10s if first attempt failed
+            if (!obdLive) {
+                delay(timeMillis = 10000L)
+                try {
+                    Log.i(TAG, "OBD retry auto-connect...")
+                    obdManager.connectAny()
+                } catch (e: Exception) {
+                    Log.e(TAG, "OBD retry auto-connect failed", e)
+                }
             }
         }
 

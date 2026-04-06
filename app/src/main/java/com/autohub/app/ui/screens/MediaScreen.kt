@@ -1,10 +1,16 @@
 package com.autohub.app.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.MusicNote
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -12,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -22,6 +29,8 @@ import com.autohub.app.ui.theme.C
 
 @Composable
 fun MediaScreen(car: CarState) {
+    val context = LocalContext.current
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
         // ── Now Playing ──
@@ -34,24 +43,24 @@ fun MediaScreen(car: CarState) {
             ) {
                 // Album art
                 Box(
-                    Modifier.size(85.dp).clip(RoundedCornerShape(12.dp))
+                    Modifier.size(90.dp).clip(RoundedCornerShape(12.dp))
                         .background(Brush.linearGradient(listOf(C.Purple, C.Blue))),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("\u266a", style = TextStyle(fontSize = 36.sp, color = Color.White.copy(alpha = 0.25f)))
+                    Text("\u266a", style = TextStyle(fontSize = 40.sp, color = Color.White.copy(alpha = 0.25f)))
                 }
 
                 Column(Modifier.weight(1f)) {
-                    Text(car.mediaTitle, style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
+                    Text(car.mediaTitle, style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
                     Spacer(Modifier.height(2.dp))
-                    Text(car.mediaArtist, style = TextStyle(fontSize = 13.sp, color = C.TextSub))
+                    Text(car.mediaArtist, style = TextStyle(fontSize = 16.sp, color = C.TextSub))
 
                     Spacer(Modifier.height(10.dp))
-                    ProgressBar(car.mediaProgress, 1f, C.Purple, 3.dp)
+                    ProgressBar(car.mediaProgress, 1f, C.Purple, 4.dp)
                     Spacer(Modifier.height(3.dp))
                     Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-                        Text(car.mediaCurrent, style = TextStyle(fontSize = 10.sp, color = C.TextMuted))
-                        Text(car.mediaDuration, style = TextStyle(fontSize = 10.sp, color = C.TextMuted))
+                        Text(car.mediaCurrent, style = TextStyle(fontSize = 12.sp, color = C.TextMuted))
+                        Text(car.mediaDuration, style = TextStyle(fontSize = 12.sp, color = C.TextMuted))
                     }
 
                     Spacer(Modifier.height(10.dp))
@@ -62,27 +71,27 @@ fun MediaScreen(car: CarState) {
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("\u23ee", style = TextStyle(fontSize = 24.sp, color = C.TextSub))
+                        Text("\u23ee", style = TextStyle(fontSize = 30.sp, color = C.TextSub))
                         Spacer(Modifier.width(24.dp))
                         Box(
-                            Modifier.size(38.dp).clip(CircleShape)
+                            Modifier.size(48.dp).clip(CircleShape)
                                 .background(C.Purple.copy(alpha = 0.15f))
                                 .border(1.dp, C.Purple.copy(alpha = 0.3f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 if (car.mediaPlaying) "\u23f8" else "\u25b6",
-                                style = TextStyle(fontSize = 18.sp, color = C.Purple)
+                                style = TextStyle(fontSize = 22.sp, color = C.Purple)
                             )
                         }
                         Spacer(Modifier.width(24.dp))
-                        Text("\u23ed", style = TextStyle(fontSize = 24.sp, color = C.TextSub))
+                        Text("\u23ed", style = TextStyle(fontSize = 30.sp, color = C.TextSub))
                     }
                 }
             }
         }
 
-        // ── EQ + Volume + Source ──
+        // ── EQ + Volume + Source + Spotify ──
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             GlassCard(Modifier.weight(1f)) {
                 LabelText("EQUALIZER")
@@ -93,20 +102,63 @@ fun MediaScreen(car: CarState) {
                 LabelText("VOLUME")
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text("${car.volume}", style = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.Thin, color = C.TextPrimary))
-                    Text("%", style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
+                    Text("${car.volume}", style = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Thin, color = C.TextPrimary))
+                    Text("%", style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
                         modifier = Modifier.padding(bottom = 3.dp))
                 }
                 Spacer(Modifier.height(4.dp))
                 ProgressBar(car.volume.toFloat(), 100f, C.Purple)
             }
-            GlassCard(Modifier.weight(0.6f)) {
+            GlassCard(Modifier.weight(0.5f)) {
                 LabelText("SOURCE")
                 Spacer(Modifier.height(6.dp))
                 SourceRow("Bluetooth", car.mediaSource == "Bluetooth")
                 SourceRow("USB", car.mediaSource == "USB")
                 SourceRow("Radio", car.mediaSource == "Radio")
                 SourceRow("Streaming", car.mediaSource == "Streaming")
+            }
+
+            // Spotify Launch Button
+            GlassCard(
+                modifier = Modifier.weight(0.5f)
+                    .clickable {
+                        try {
+                            val intent = context.packageManager.getLaunchIntentForPackage("com.spotify.music")
+                            if (intent != null) {
+                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(intent)
+                            } else {
+                                val storeIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.spotify.music"))
+                                storeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                context.startActivity(storeIntent)
+                            }
+                        } catch (_: Exception) { }
+                    }
+            ) {
+                Column(
+                    Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.MusicNote,
+                        contentDescription = "Spotify",
+                        tint = Color(0xFF1DB954),
+                        modifier = Modifier.size(36.dp)
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "SPOTIFY",
+                        style = TextStyle(
+                            fontSize = 12.sp, fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1DB954), letterSpacing = 1.sp
+                        )
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        "Open App",
+                        style = TextStyle(fontSize = 11.sp, color = C.TextSub)
+                    )
+                }
             }
         }
     }
@@ -119,7 +171,7 @@ private fun SourceRow(name: String, active: Boolean) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        StatusDot(if (active) C.Purple else C.TextMuted, 4.dp)
-        Text(name, style = TextStyle(fontSize = 12.sp, color = if (active) C.TextPrimary else C.TextMuted))
+        StatusDot(if (active) C.Purple else C.TextMuted, 5.dp)
+        Text(name, style = TextStyle(fontSize = 14.sp, color = if (active) C.TextPrimary else C.TextMuted))
     }
 }

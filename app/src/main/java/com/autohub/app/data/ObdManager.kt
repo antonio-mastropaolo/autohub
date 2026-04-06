@@ -193,6 +193,7 @@ class ObdManager(private val context: Context) {
             var foundWrite: BluetoothGattCharacteristic? = null
             var foundNotify: BluetoothGattCharacteristic? = null
 
+            // First pass: look in known OBD service UUIDs
             for (service in g.services) {
                 if (service.uuid !in BLE_SERVICE_UUIDS) continue
                 Log.i(TAG, "Matched BLE OBD service: ${service.uuid}")
@@ -209,8 +210,33 @@ class ObdManager(private val context: Context) {
                 }
             }
 
+            // Second pass: if not found in known services, scan ALL services
+            // Some HT500 units use non-standard service UUIDs
             if (foundWrite == null || foundNotify == null) {
-                Log.e(TAG, "Could not locate required BLE OBD characteristics")
+                Log.w(TAG, "Known BLE OBD services not found, scanning all services...")
+                for (service in g.services) {
+                    Log.i(TAG, "Service: ${service.uuid} chars=${service.characteristics.map { it.uuid }}")
+                    for (char in service.characteristics) {
+                        val props = char.properties
+                        val canWrite = (props and BluetoothGattCharacteristic.PROPERTY_WRITE) != 0 ||
+                            (props and BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) != 0
+                        val canNotify = (props and BluetoothGattCharacteristic.PROPERTY_NOTIFY) != 0 ||
+                            (props and BluetoothGattCharacteristic.PROPERTY_INDICATE) != 0
+
+                        if (canWrite && foundWrite == null) {
+                            foundWrite = char
+                            Log.i(TAG, "Fallback: found writable characteristic: ${char.uuid} in service ${service.uuid}")
+                        }
+                        if (canNotify && foundNotify == null) {
+                            foundNotify = char
+                            Log.i(TAG, "Fallback: found notify characteristic: ${char.uuid} in service ${service.uuid}")
+                        }
+                    }
+                }
+            }
+
+            if (foundWrite == null || foundNotify == null) {
+                Log.e(TAG, "Could not locate required BLE OBD characteristics (write=${foundWrite != null}, notify=${foundNotify != null})")
                 cleanupConnection()
                 _connectionState.value = ConnectionState.ERROR
                 return

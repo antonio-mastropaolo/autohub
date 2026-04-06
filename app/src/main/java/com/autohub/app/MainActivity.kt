@@ -92,6 +92,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
     LaunchedEffect(Unit) {
         permissionLauncher.launch(arrayOf(
             android.Manifest.permission.BLUETOOTH_CONNECT,
+            android.Manifest.permission.BLUETOOTH_SCAN,
             android.Manifest.permission.ACCESS_FINE_LOCATION
         ))
     }
@@ -130,50 +131,50 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Speed
-                Text("${car.speed}", style = TextStyle(color = C.TextPrimary, fontSize = 26.sp, fontWeight = FontWeight.Thin, letterSpacing = (-0.5).sp))
-                Text(" MPH", style = TextStyle(color = C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold), modifier = Modifier.padding(bottom = 2.dp))
+                Text("${car.speed}", style = TextStyle(color = C.TextPrimary, fontSize = 30.sp, fontWeight = FontWeight.Thin, letterSpacing = (-0.5).sp))
+                Text(" MPH", style = TextStyle(color = C.TextMuted, fontSize = 12.sp, fontWeight = FontWeight.Bold), modifier = Modifier.padding(bottom = 2.dp))
                 Spacer(Modifier.width(8.dp))
 
                 // Gear
                 Box(
-                    Modifier.size(24.dp).clip(RoundedCornerShape(5.dp))
+                    Modifier.size(30.dp).clip(RoundedCornerShape(6.dp))
                         .background(C.BlueDim)
-                        .border(0.5.dp, C.Blue.copy(alpha = 0.2f), RoundedCornerShape(5.dp)),
+                        .border(0.5.dp, C.Blue.copy(alpha = 0.2f), RoundedCornerShape(6.dp)),
                     contentAlignment = Alignment.Center
-                ) { Text(car.gear, style = TextStyle(color = C.Blue, fontSize = 12.sp, fontWeight = FontWeight.Light)) }
+                ) { Text(car.gear, style = TextStyle(color = C.Blue, fontSize = 16.sp, fontWeight = FontWeight.Light)) }
                 Spacer(Modifier.width(8.dp))
 
                 // RPM bar
-                Box(Modifier.width(80.dp)) {
+                Box(Modifier.width(100.dp)) {
                     ProgressBar(car.rpm.toFloat(), 8000f,
-                        if (car.rpm > 5000) C.Red else C.Blue, 4.dp)
+                        if (car.rpm > 5000) C.Red else C.Blue, 5.dp)
                 }
                 Text(" %.1fK".format(car.rpm / 1000f),
-                    style = TextStyle(color = C.TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold), modifier = Modifier.padding(start = 4.dp))
+                    style = TextStyle(color = C.TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold), modifier = Modifier.padding(start = 4.dp))
 
                 Spacer(Modifier.weight(1f))
 
                 // Weather
                 Text("${car.weatherIcon} ${car.outsideTemp}\u00b0",
-                    style = TextStyle(fontSize = 12.sp, color = C.TextSecondary))
+                    style = TextStyle(fontSize = 14.sp, color = C.TextSecondary))
                 Spacer(Modifier.width(12.dp))
-                Box(Modifier.width(0.5.dp).height(14.dp).background(C.TextFaint))
+                Box(Modifier.width(0.5.dp).height(16.dp).background(C.TextFaint))
                 Spacer(Modifier.width(12.dp))
 
                 // Signal bars
-                Row(horizontalArrangement = Arrangement.spacedBy(1.5.dp), verticalAlignment = Alignment.Bottom) {
+                Row(horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.Bottom) {
                     for (i in 1..5) {
                         Box(
-                            Modifier.width(3.dp).height((3 + i * 1.5f).dp)
+                            Modifier.width(4.dp).height((4 + i * 2f).dp)
                                 .clip(RoundedCornerShape(1.dp))
                                 .background(if (i <= car.signalStrength) C.Green else C.TextFaint)
                         )
                     }
                 }
-                Text(" ${car.phoneBattery}%", style = TextStyle(fontSize = 10.sp, color = C.TextSub), modifier = Modifier.padding(start = 4.dp))
+                Text(" ${car.phoneBattery}%", style = TextStyle(fontSize = 12.sp, color = C.TextSub), modifier = Modifier.padding(start = 4.dp))
 
                 Spacer(Modifier.width(12.dp))
-                Box(Modifier.width(0.5.dp).height(14.dp).background(C.TextFaint))
+                Box(Modifier.width(0.5.dp).height(16.dp).background(C.TextFaint))
                 Spacer(Modifier.width(12.dp))
 
                 // Connection status: OBD (green) or DEMO (amber)
@@ -181,20 +182,20 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                     imageVector = Icons.Outlined.Bluetooth,
                     contentDescription = "Bluetooth",
                     tint = if (car.obdConnected) C.Green else Color(0xFFFFB300),
-                    modifier = Modifier.size(10.dp)
+                    modifier = Modifier.size(14.dp)
                 )
-                Spacer(Modifier.width(2.dp))
-                StatusDot(if (car.obdConnected) C.Green else Color(0xFFFFB300), 4.dp)
+                Spacer(Modifier.width(3.dp))
+                StatusDot(if (car.obdConnected) C.Green else Color(0xFFFFB300), 5.dp)
                 if (car.obdConnected) {
-                    Text(" OBD", style = TextStyle(color = C.Green, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp))
+                    Text(" OBD", style = TextStyle(color = C.Green, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp))
                 } else {
-                    Text(" DEMO", style = TextStyle(color = Color(0xFFFFB300), fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp))
+                    Text(" DEMO", style = TextStyle(color = Color(0xFFFFB300), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp))
                 }
                 Spacer(Modifier.width(8.dp))
 
                 // Clock
-                Text(time, style = TextStyle(color = C.TextPrimary, fontSize = 20.sp, fontWeight = FontWeight.Thin, letterSpacing = (-0.5).sp))
-                Text(" $ampm", style = TextStyle(color = C.TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold))
+                Text(time, style = TextStyle(color = C.TextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Thin, letterSpacing = (-0.5).sp))
+                Text(" $ampm", style = TextStyle(color = C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold))
             }
 
             // ════════════════════════════════════════════════
@@ -204,25 +205,25 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
 
                 // ── Navigation Dock ──
                 Column(
-                    Modifier.width(56.dp).fillMaxHeight()
+                    Modifier.width(88.dp).fillMaxHeight()
                         .background(C.DockBg)
                         .border(width = 0.5.dp, C.DockBorder, RoundedCornerShape(0.dp))
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Logo
                     Box(
-                        Modifier.size(36.dp).clip(RoundedCornerShape(8.dp))
+                        Modifier.size(48.dp).clip(RoundedCornerShape(10.dp))
                             .background(C.BlueDim)
-                            .border(0.5.dp, C.Blue.copy(alpha = 0.15f), RoundedCornerShape(8.dp)),
+                            .border(0.5.dp, C.Blue.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Hub,
                             contentDescription = "AutoHub",
                             tint = C.Blue,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                     }
 
@@ -246,7 +247,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                         imageVector = Icons.Outlined.Settings,
                         contentDescription = "Settings",
                         tint = C.TextMuted,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                 }
 
@@ -300,7 +301,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
             Box(Modifier.fillMaxWidth().padding(vertical = 4.dp), Alignment.Center) {
                 Text(
                     "AUTOHUB OS 2.0  \u2022  VW ATLAS CROSS SPORT 2024  \u2022  OTTOCAST P3 PRO",
-                    style = TextStyle(color = C.TextMuted, fontSize = 7.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
+                    style = TextStyle(color = C.TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
                 )
             }
         }
@@ -311,23 +312,23 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
 private fun DockItem(icon: ImageVector, label: String, id: String, activeTab: String, onTap: (String) -> Unit) {
     val active = activeTab == id
     Box(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).clickable { onTap(id) }
-            .padding(vertical = 5.dp),
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable { onTap(id) }
+            .padding(vertical = 4.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (active) {
-                Box(Modifier.width(2.dp).height(16.dp).clip(RoundedCornerShape(2.dp)).background(C.Blue))
-                Spacer(Modifier.width(3.dp))
+                Box(Modifier.width(3.dp).height(28.dp).clip(RoundedCornerShape(2.dp)).background(C.Blue))
+                Spacer(Modifier.width(4.dp))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
                     imageVector = icon,
                     contentDescription = label,
                     tint = if (active) C.Blue else C.TextMuted,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(36.dp)
                 )
-                Text(label, style = TextStyle(color = if (active) C.Blue else C.TextMuted, fontSize = 7.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp))
+                Text(label, style = TextStyle(color = if (active) C.Blue else C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp))
             }
         }
     }

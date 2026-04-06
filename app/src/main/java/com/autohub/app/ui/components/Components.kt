@@ -56,7 +56,7 @@ fun LabelText(text: String) {
     Text(
         text.uppercase(),
         style = TextStyle(
-            fontSize = 10.sp, fontWeight = FontWeight.Bold,
+            fontSize = 12.sp, fontWeight = FontWeight.Bold,
             color = C.TextMuted, letterSpacing = 1.2.sp
         )
     )
@@ -77,7 +77,7 @@ fun Pill(text: String, color: Color) {
     ) {
         Text(
             text.uppercase(),
-            style = TextStyle(color = color, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
+            style = TextStyle(color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
         )
     }
 }
@@ -169,16 +169,16 @@ fun ArcGauge(
 
             // Value text
             val vl = tm.measure(value.toInt().toString(),
-                TextStyle(color = C.TextPrimary, fontSize = 34.sp, fontWeight = FontWeight.ExtraLight, textAlign = TextAlign.Center))
-            drawText(vl, topLeft = Offset(cx - vl.size.width / 2f, cy + 14f))
+                TextStyle(color = C.TextPrimary, fontSize = 40.sp, fontWeight = FontWeight.ExtraLight, textAlign = TextAlign.Center))
+            drawText(vl, topLeft = Offset(cx - vl.size.width / 2f, cy + 12f))
 
             // Unit text
             val ul = tm.measure(unit,
-                TextStyle(color = C.TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, textAlign = TextAlign.Center))
-            drawText(ul, topLeft = Offset(cx - ul.size.width / 2f, cy + 42f))
+                TextStyle(color = C.TextMuted, fontSize = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, textAlign = TextAlign.Center))
+            drawText(ul, topLeft = Offset(cx - ul.size.width / 2f, cy + 48f))
         }
 
-        Text(label, style = TextStyle(color = C.TextSub, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp),
+        Text(label, style = TextStyle(color = C.TextSub, fontSize = 12.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp),
             modifier = Modifier.offset(y = (-4).dp))
     }
 }
@@ -190,7 +190,7 @@ fun ArcGauge(
 @Composable
 fun MiniRingGauge(
     value: Float, maxValue: Float, color: Color,
-    modifier: Modifier = Modifier, size: Dp = 32.dp,
+    modifier: Modifier = Modifier, size: Dp = 38.dp,
 ) {
     val pct by animateFloatAsState(
         (value / maxValue).coerceIn(0f, 1f), tween(1200), label = "mini"

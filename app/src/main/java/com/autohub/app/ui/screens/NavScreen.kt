@@ -175,14 +175,14 @@ fun NavScreen(car: CarState) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        StatusDot(if (car.gpsActive) C.Green else C.Amber, 4.dp)
+                        StatusDot(if (car.gpsActive) C.Green else C.Amber, 5.dp)
                         Text(
                             "${car.satellites} SAT",
-                            style = TextStyle(fontSize = 9.sp, fontWeight = FontWeight.Bold, color = C.TextSub)
+                            style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Bold, color = C.TextSub)
                         )
                         Text(
                             "${car.altitude}ft",
-                            style = TextStyle(fontSize = 9.sp, color = C.TextMuted)
+                            style = TextStyle(fontSize = 11.sp, color = C.TextMuted)
                         )
                     }
                 }
@@ -197,7 +197,7 @@ fun NavScreen(car: CarState) {
                 ) {
                     Text(
                         "%.4f, %.4f".format(car.latitude, car.longitude),
-                        style = TextStyle(fontSize = 8.sp, color = C.TextMuted)
+                        style = TextStyle(fontSize = 10.sp, color = C.TextMuted)
                     )
                 }
             }
@@ -265,20 +265,20 @@ fun NavScreen(car: CarState) {
                         imageVector = Icons.Outlined.Navigation,
                         contentDescription = "Waze",
                         tint = C.Cyan,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(34.dp)
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "WAZE",
                         style = TextStyle(
-                            fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp, fontWeight = FontWeight.Bold,
                             color = C.Cyan, letterSpacing = 1.sp
                         )
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
                         "Navigate",
-                        style = TextStyle(fontSize = 9.sp, color = C.TextSub)
+                        style = TextStyle(fontSize = 11.sp, color = C.TextSub)
                     )
                 }
             }
@@ -313,20 +313,20 @@ fun NavScreen(car: CarState) {
                         imageVector = Icons.Outlined.Map,
                         contentDescription = "Google Maps",
                         tint = C.Green,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(34.dp)
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
                         "MAPS",
                         style = TextStyle(
-                            fontSize = 11.sp, fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp, fontWeight = FontWeight.Bold,
                             color = C.Green, letterSpacing = 1.sp
                         )
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
                         "Navigate",
-                        style = TextStyle(fontSize = 9.sp, color = C.TextSub)
+                        style = TextStyle(fontSize = 11.sp, color = C.TextSub)
                     )
                 }
             }
@@ -340,7 +340,7 @@ private fun TripRow(label: String, value: String) {
         Modifier.fillMaxWidth().padding(vertical = 2.dp),
         Arrangement.SpaceBetween
     ) {
-        Text(label, style = TextStyle(fontSize = 11.sp, color = C.TextSub))
-        Text(value, style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
+        Text(label, style = TextStyle(fontSize = 13.sp, color = C.TextSub))
+        Text(value, style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
     }
 }

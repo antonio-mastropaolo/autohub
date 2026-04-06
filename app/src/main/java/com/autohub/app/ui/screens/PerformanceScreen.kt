@@ -60,8 +60,8 @@ fun PerformanceScreen(car: CarState) {
                 )
                 Spacer(Modifier.height(4.dp))
                 Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-                    Text("2m ago", style = TextStyle(fontSize = 8.sp, color = C.TextMuted))
-                    Text("now", style = TextStyle(fontSize = 8.sp, color = C.TextMuted))
+                    Text("2m ago", style = TextStyle(fontSize = 10.sp, color = C.TextMuted))
+                    Text("now", style = TextStyle(fontSize = 10.sp, color = C.TextMuted))
                 }
             }
         }
@@ -77,8 +77,8 @@ private fun PerfStatCard(
         LabelText(label)
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.ExtraLight, color = C.TextPrimary))
-            Text(unit, style = TextStyle(fontSize = 9.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
+            Text(value, style = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.ExtraLight, color = C.TextPrimary))
+            Text(unit, style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
                 modifier = Modifier.padding(start = 2.dp, bottom = 3.dp))
         }
         Spacer(Modifier.height(4.dp))
@@ -93,9 +93,9 @@ private fun RecordRow(label: String, value: String, color: Color) {
         Arrangement.SpaceBetween, Alignment.CenterVertically
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            StatusDot(color, 3.dp)
-            Text(label, style = TextStyle(fontSize = 12.sp, color = C.TextSub, fontWeight = FontWeight.Medium))
+            StatusDot(color, 4.dp)
+            Text(label, style = TextStyle(fontSize = 14.sp, color = C.TextSub, fontWeight = FontWeight.Medium))
         }
-        Text(value, style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
+        Text(value, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
     }
 }
