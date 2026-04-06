@@ -83,4 +83,7 @@ dependencies {
 
     // Play Services location
     implementation("com.google.android.gms:play-services-location:21.1.0")
+
+    // OpenStreetMap embedded map
+    implementation("org.osmdroid:osmdroid-android:6.1.18")
 }
