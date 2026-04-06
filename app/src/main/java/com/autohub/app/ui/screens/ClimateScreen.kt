@@ -31,7 +31,7 @@ fun ClimateScreen(car: CarState) {
                 Spacer(Modifier.width(6.dp))
                 Text(
                     "DUAL ZONE CLIMATE ${if (car.acOn) "ACTIVE" else "OFF"}",
-                    style = TextStyle(fontSize = 8.sp, fontWeight = FontWeight.Bold, color = if (car.acOn) C.Cyan else C.TextMuted, letterSpacing = 1.sp)
+                    style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (car.acOn) C.Cyan else C.TextMuted, letterSpacing = 1.sp)
                 )
             }
             Spacer(Modifier.height(6.dp))
@@ -45,7 +45,7 @@ fun ClimateScreen(car: CarState) {
                     LabelText("DRIVER")
                     Spacer(Modifier.height(4.dp))
                     TempKnob(car.cabinTemp, car.acTarget, C.Cyan, size = 100.dp)
-                    Text("Target: ${car.acTarget}\u00b0F", style = TextStyle(fontSize = 9.sp, color = C.TextSub))
+                    Text("Target: ${car.acTarget}\u00b0F", style = TextStyle(fontSize = 11.sp, color = C.TextSub))
                 }
 
                 // Fan + Airflow center
@@ -72,7 +72,7 @@ fun ClimateScreen(car: CarState) {
                     LabelText("PASSENGER")
                     Spacer(Modifier.height(4.dp))
                     TempKnob(car.cabinTemp + 2, car.acTargetPass, C.Blue, size = 100.dp)
-                    Text("Target: ${car.acTargetPass}\u00b0F", style = TextStyle(fontSize = 9.sp, color = C.TextSub))
+                    Text("Target: ${car.acTargetPass}\u00b0F", style = TextStyle(fontSize = 11.sp, color = C.TextSub))
                 }
             }
         }
@@ -83,8 +83,8 @@ fun ClimateScreen(car: CarState) {
                 LabelText("AIR QUALITY")
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text("${car.airQuality}", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Thin, color = C.TextPrimary))
-                    Text(" AQI", style = TextStyle(fontSize = 8.sp, fontWeight = FontWeight.Bold, color = C.TextMuted), modifier = Modifier.padding(bottom = 3.dp))
+                    Text("${car.airQuality}", style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Thin, color = C.TextPrimary))
+                    Text(" AQI", style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = C.TextMuted), modifier = Modifier.padding(bottom = 3.dp))
                 }
                 Spacer(Modifier.height(3.dp))
                 Pill(if (car.airQuality > 80) "Good" else "Moderate",
@@ -94,8 +94,8 @@ fun ClimateScreen(car: CarState) {
                 LabelText("HUMIDITY")
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text("${car.humidity}", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Thin, color = C.TextPrimary))
-                    Text("%", style = TextStyle(fontSize = 8.sp, fontWeight = FontWeight.Bold, color = C.TextMuted), modifier = Modifier.padding(bottom = 3.dp))
+                    Text("${car.humidity}", style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Thin, color = C.TextPrimary))
+                    Text("%", style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = C.TextMuted), modifier = Modifier.padding(bottom = 3.dp))
                 }
                 Spacer(Modifier.height(3.dp))
                 ProgressBar(car.humidity.toFloat(), 100f, C.Cyan, 2.dp)
@@ -104,8 +104,8 @@ fun ClimateScreen(car: CarState) {
                 LabelText("OUTSIDE")
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
-                    Text("${car.outsideTemp}", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Thin))
-                    Text("\u00b0F", style = TextStyle(fontSize = 10.sp, color = C.TextMuted), modifier = Modifier.padding(bottom = 2.dp))
+                    Text("${car.outsideTemp}", style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Thin))
+                    Text("\u00b0F", style = TextStyle(fontSize = 12.sp, color = C.TextMuted), modifier = Modifier.padding(bottom = 2.dp))
                 }
             }
         }
@@ -152,7 +152,7 @@ fun ClimateScreen(car: CarState) {
 @Composable
 private fun SeatHeatCol(label: String, level: Int) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(label, style = TextStyle(fontSize = 7.sp, fontWeight = FontWeight.Bold, color = C.TextMuted))
+        Text(label, style = TextStyle(fontSize = 9.sp, fontWeight = FontWeight.Bold, color = C.TextMuted))
         Spacer(Modifier.height(3.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
             for (i in 1..3) {
@@ -167,7 +167,7 @@ private fun SeatHeatCol(label: String, level: Int) {
 private fun DefrostRow(label: String, on: Boolean) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         StatusDot(if (on) C.Amber else C.TextMuted, 3.dp)
-        Text(label, style = TextStyle(fontSize = 10.sp, color = if (on) C.TextSub else C.TextMuted))
+        Text(label, style = TextStyle(fontSize = 12.sp, color = if (on) C.TextSub else C.TextMuted))
     }
 }
 
@@ -175,7 +175,7 @@ private fun DefrostRow(label: String, on: Boolean) {
 private fun ToggleRow(on: Boolean) {
     Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
         StatusDot(if (on) C.Cyan else C.TextMuted, 3.dp)
-        Text(if (on) "ON" else "OFF", style = TextStyle(fontSize = 9.sp, color = if (on) C.TextSub else C.TextMuted))
+        Text(if (on) "ON" else "OFF", style = TextStyle(fontSize = 11.sp, color = if (on) C.TextSub else C.TextMuted))
     }
 }
 
@@ -183,8 +183,8 @@ private fun ToggleRow(on: Boolean) {
 private fun ThermalRow(label: String, value: Int, max: Float, color: androidx.compose.ui.graphics.Color) {
     Column(Modifier.padding(bottom = 4.dp)) {
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-            Text(label, style = TextStyle(fontSize = 8.sp, color = C.TextSub, fontWeight = FontWeight.Medium))
-            Text("$value\u00b0F", style = TextStyle(fontSize = 8.sp, color = C.TextPrimary))
+            Text(label, style = TextStyle(fontSize = 10.sp, color = C.TextSub, fontWeight = FontWeight.Medium))
+            Text("$value\u00b0F", style = TextStyle(fontSize = 10.sp, color = C.TextPrimary))
         }
         Spacer(Modifier.height(2.dp))
         ProgressBar(value.toFloat(), max, color, 2.dp)

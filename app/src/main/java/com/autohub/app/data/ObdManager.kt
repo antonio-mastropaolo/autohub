@@ -3,43 +3,100 @@ package com.autohub.app.data
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
+import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothSocket
+import android.bluetooth.le.BluetoothLeScanner
+import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanResult
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.UUID
+import kotlin.coroutines.resume
 
 /**
  * OBD-II Bluetooth manager for ELM327-compatible adapters.
- * Connects via classic Bluetooth RFCOMM and queries standard PIDs
- * for real-time vehicle telemetry on a 2024 VW Atlas Cross Sport.
+ * Supports BOTH classic Bluetooth SPP (RFCOMM) AND Bluetooth Low Energy (BLE) GATT connections.
+ *
+ * Classic BT: standard ELM327/Vgate/BAFX adapters that pair via Bluetooth settings.
+ * BLE GATT:   Innova / Hyper Tough HT500 / 3250 adapters that advertise as BLE peripherals
+ *             and communicate through GATT service characteristics.
  */
-class ObdManager(context: Context) {
+class ObdManager(private val context: Context) {
 
     companion object {
         private const val TAG = "ObdManager"
 
+        // ----- Classic Bluetooth SPP -----
         /** Standard SPP UUID for RFCOMM */
         private val SPP_UUID: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
 
-        /** Known OBD adapter name fragments */
-        private val OBD_NAME_PATTERNS = listOf("OBD", "ELM", "Vgate", "iCar", "Veepeak", "BAFX")
+        // ----- BLE GATT service/characteristic UUIDs -----
+        /** Common BLE OBD service UUIDs (Innova, generic ELM327-BLE clones) */
+        private val BLE_SERVICE_UUIDS = listOf(
+            UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb"),
+            UUID.fromString("000018f0-0000-1000-8000-00805f9b34fb"),
+            UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb")
+        )
 
+        /** Write characteristic UUIDs */
+        private val BLE_WRITE_CHAR_UUIDS = listOf(
+            UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb"),
+            UUID.fromString("0000ffe2-0000-1000-8000-00805f9b34fb")
+        )
+
+        /** Notify / read characteristic UUIDs */
+        private val BLE_NOTIFY_CHAR_UUIDS = listOf(
+            UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"),
+            UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")
+        )
+
+        /** Client Characteristic Configuration Descriptor — required to enable BLE notifications */
+        private val CCCD_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+
+        // ----- Device name matching -----
+        /** Classic OBD adapter name fragments */
+        private val OBD_NAME_PATTERNS = listOf(
+            "OBD", "ELM", "Vgate", "iCar", "Veepeak", "BAFX"
+        )
+
+        /** BLE OBD adapter name fragments (Innova / Hyper Tough family) */
+        private val BLE_OBD_NAME_PATTERNS = listOf(
+            "INNOVA", "HT500", "Hyper", "3250", "INN"
+        )
+
+        /** Combined set for any OBD device detection */
+        private val ALL_OBD_NAME_PATTERNS = OBD_NAME_PATTERNS + BLE_OBD_NAME_PATTERNS
+
+        // ----- Timing -----
         /** Read timeout in milliseconds */
         private const val READ_TIMEOUT_MS = 2000L
+
+        /** BLE response timeout — BLE can be slower with chunked replies */
+        private const val BLE_READ_TIMEOUT_MS = 3000L
 
         /** Query loop interval in milliseconds */
         private const val QUERY_INTERVAL_MS = 500L
 
         /** Delay after ATZ reset */
         private const val RESET_DELAY_MS = 1000L
+
+        /** BLE scan duration in milliseconds */
+        private const val BLE_SCAN_DURATION_MS = 5000L
     }
 
     enum class ConnectionState {
@@ -68,10 +125,26 @@ class ObdManager(context: Context) {
         context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     private val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.adapter
 
+    // ----- Classic BT state -----
     private var socket: BluetoothSocket? = null
     private var inputStream: InputStream? = null
     private var outputStream: OutputStream? = null
 
+    // ----- BLE GATT state -----
+    private var gatt: BluetoothGatt? = null
+    private var writeCharacteristic: BluetoothGattCharacteristic? = null
+    private var isBle = false
+
+    /** Buffer that accumulates BLE notification chunks until the '>' prompt */
+    private val bleResponseBuffer = StringBuilder()
+
+    /** Mutex so only one command-response exchange happens at a time over BLE */
+    private val bleMutex = Mutex()
+
+    /** Continuation used to resume the caller once a full BLE response is received */
+    private var bleResponseContinuation: CancellableContinuation<String?>? = null
+
+    // ----- Shared state -----
     private var queryJob: Job? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -82,24 +155,189 @@ class ObdManager(context: Context) {
     val reading: StateFlow<ObdReading> = _reading.asStateFlow()
 
     // ---------------------------------------------------------------
+    // BLE GATT Callback
+    // ---------------------------------------------------------------
+
+    @SuppressLint("MissingPermission")
+    private val gattCallback = object : BluetoothGattCallback() {
+
+        override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
+            when (newState) {
+                BluetoothProfile.STATE_CONNECTED -> {
+                    Log.i(TAG, "BLE GATT connected, discovering services...")
+                    g.discoverServices()
+                }
+                BluetoothProfile.STATE_DISCONNECTED -> {
+                    Log.w(TAG, "BLE GATT disconnected (status=$status)")
+                    if (_connectionState.value == ConnectionState.CONNECTED ||
+                        _connectionState.value == ConnectionState.CONNECTING
+                    ) {
+                        cleanupConnection()
+                        _connectionState.value = ConnectionState.ERROR
+                    }
+                }
+            }
+        }
+
+        @Suppress("DEPRECATION")
+        override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                Log.e(TAG, "BLE service discovery failed: status=$status")
+                cleanupConnection()
+                _connectionState.value = ConnectionState.ERROR
+                return
+            }
+
+            Log.i(TAG, "BLE services discovered: ${g.services.map { it.uuid }}")
+
+            var foundWrite: BluetoothGattCharacteristic? = null
+            var foundNotify: BluetoothGattCharacteristic? = null
+
+            for (service in g.services) {
+                if (service.uuid !in BLE_SERVICE_UUIDS) continue
+                Log.i(TAG, "Matched BLE OBD service: ${service.uuid}")
+
+                for (char in service.characteristics) {
+                    if (char.uuid in BLE_WRITE_CHAR_UUIDS && foundWrite == null) {
+                        foundWrite = char
+                        Log.i(TAG, "Found BLE write characteristic: ${char.uuid}")
+                    }
+                    if (char.uuid in BLE_NOTIFY_CHAR_UUIDS && foundNotify == null) {
+                        foundNotify = char
+                        Log.i(TAG, "Found BLE notify characteristic: ${char.uuid}")
+                    }
+                }
+            }
+
+            if (foundWrite == null || foundNotify == null) {
+                Log.e(TAG, "Could not locate required BLE OBD characteristics")
+                cleanupConnection()
+                _connectionState.value = ConnectionState.ERROR
+                return
+            }
+
+            writeCharacteristic = foundWrite
+
+            // Enable notifications on the read/notify characteristic
+            g.setCharacteristicNotification(foundNotify, true)
+            val descriptor = foundNotify.getDescriptor(CCCD_UUID)
+            if (descriptor != null) {
+                descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                g.writeDescriptor(descriptor)
+                Log.i(TAG, "BLE notifications enabled on ${foundNotify.uuid}")
+            } else {
+                Log.w(TAG, "CCCD descriptor not found on notify characteristic")
+            }
+
+            // Mark connection as ready — ELM init will happen on the coroutine that called connect()
+            isBle = true
+            _connectionState.value = ConnectionState.CONNECTED
+        }
+
+        @Deprecated("Deprecated in API 33, still needed for lower API levels")
+        override fun onCharacteristicChanged(
+            g: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic
+        ) {
+            val chunk = characteristic.value ?: return
+            val text = String(chunk)
+            bleResponseBuffer.append(text)
+
+            // The ELM327 prompt '>' signals end of response
+            if (text.contains(">")) {
+                val full = bleResponseBuffer.toString().trim()
+                bleResponseBuffer.clear()
+                bleResponseContinuation?.let {
+                    bleResponseContinuation = null
+                    val cleaned = full.replace(">", "").trim()
+                    if (cleaned.isEmpty() || cleaned.contains("NO DATA") || cleaned.contains("ERROR")) {
+                        it.resume(null)
+                    } else {
+                        it.resume(cleaned)
+                    }
+                }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------
     // Public API
     // ---------------------------------------------------------------
 
     /**
      * Returns paired Bluetooth devices whose names match known OBD adapter patterns.
+     * This includes both classic BT and BLE-capable devices that are already bonded.
      */
     @SuppressLint("MissingPermission")
     fun getObdDevices(): List<BluetoothDevice> {
         val adapter = bluetoothAdapter ?: return emptyList()
         return adapter.bondedDevices.filter { device ->
             val name = device.name ?: return@filter false
-            OBD_NAME_PATTERNS.any { pattern -> name.contains(other = pattern, ignoreCase = true) }
+            ALL_OBD_NAME_PATTERNS.any { pattern -> name.contains(other = pattern, ignoreCase = true) }
+        }
+    }
+
+    /**
+     * Scans for nearby BLE OBD devices that may not be paired.
+     * This catches devices like the Hyper Tough HT500 that advertise via BLE
+     * and do not need to be paired beforehand.
+     *
+     * Returns discovered devices after [BLE_SCAN_DURATION_MS] milliseconds.
+     */
+    @SuppressLint("MissingPermission")
+    suspend fun scanForBleDevices(): List<BluetoothDevice> {
+        val adapter = bluetoothAdapter ?: return emptyList()
+        val scanner: BluetoothLeScanner = adapter.bluetoothLeScanner ?: run {
+            Log.w(TAG, "BLE scanner not available")
+            return emptyList()
+        }
+
+        val discovered = mutableMapOf<String, BluetoothDevice>()
+
+        return suspendCancellableCoroutine { cont ->
+            val callback = object : ScanCallback() {
+                override fun onScanResult(callbackType: Int, result: ScanResult) {
+                    val device = result.device
+                    val name = device.name ?: result.scanRecord?.deviceName ?: return
+                    if (ALL_OBD_NAME_PATTERNS.any { name.contains(it, ignoreCase = true) }) {
+                        Log.i(TAG, "BLE scan found OBD device: $name [${device.address}]")
+                        discovered[device.address] = device
+                    }
+                }
+
+                override fun onScanFailed(errorCode: Int) {
+                    Log.e(TAG, "BLE scan failed: errorCode=$errorCode")
+                    if (cont.isActive) cont.resume(emptyList())
+                }
+            }
+
+            scanner.startScan(callback)
+            Log.i(TAG, "BLE scan started")
+
+            // Stop scan after the duration and return results
+            scope.launch {
+                delay(BLE_SCAN_DURATION_MS)
+                try {
+                    scanner.stopScan(callback)
+                } catch (_: Exception) { }
+                Log.i(TAG, "BLE scan stopped, found ${discovered.size} device(s)")
+                if (cont.isActive) cont.resume(discovered.values.toList())
+            }
+
+            cont.invokeOnCancellation {
+                try {
+                    scanner.stopScan(callback)
+                } catch (_: Exception) { }
+            }
         }
     }
 
     /**
      * Connects to the given Bluetooth OBD device, initialises the ELM327,
      * and starts the continuous query loop.
+     *
+     * Attempts BLE GATT first. If the device does not support BLE or GATT
+     * connection fails, falls back to classic Bluetooth SPP (RFCOMM).
      */
     @SuppressLint("MissingPermission")
     suspend fun connect(device: BluetoothDevice) {
@@ -112,30 +350,64 @@ class ObdManager(context: Context) {
         _connectionState.value = ConnectionState.CONNECTING
         _reading.value = ObdReading()
 
-        withContext(Dispatchers.IO) {
-            try {
-                // Cancel any ongoing discovery to speed up connection
-                bluetoothAdapter?.cancelDiscovery()
+        // Cancel any ongoing discovery to speed up connection
+        bluetoothAdapter?.cancelDiscovery()
 
-                val btSocket = device.createRfcommSocketToServiceRecord(SPP_UUID)
-                socket = btSocket
-                btSocket.connect()
+        val deviceType = device.type
+        val isBleCapable = deviceType == BluetoothDevice.DEVICE_TYPE_LE ||
+                deviceType == BluetoothDevice.DEVICE_TYPE_DUAL
 
-                inputStream = btSocket.inputStream
-                outputStream = btSocket.outputStream
+        Log.i(TAG, "Connecting to ${device.name} [${device.address}] type=$deviceType bleCapable=$isBleCapable")
 
-                initElm327()
-
-                _connectionState.value = ConnectionState.CONNECTED
-                Log.i(TAG, "Connected to ${device.name}")
-
-                startQueryLoop()
-            } catch (e: IOException) {
-                Log.e(TAG, "Connection failed", e)
-                cleanupConnection()
-                _connectionState.value = ConnectionState.ERROR
+        // Try BLE first for BLE or dual-mode devices
+        if (isBleCapable) {
+            val bleSuccess = tryConnectBle(device)
+            if (bleSuccess) {
+                Log.i(TAG, "BLE connection established to ${device.name}")
+                return
             }
+            Log.w(TAG, "BLE connection failed for ${device.name}, falling back to classic SPP")
+            // Reset state before fallback
+            _connectionState.value = ConnectionState.CONNECTING
         }
+
+        // Fallback: classic Bluetooth SPP
+        tryConnectClassic(device)
+    }
+
+    /**
+     * Auto-connect flow:
+     * 1. Check paired classic BT devices for known OBD adapters.
+     * 2. If none found, scan BLE for unpaired OBD devices.
+     * 3. Connect to the first OBD device found.
+     */
+    @SuppressLint("MissingPermission")
+    suspend fun connectAny() {
+        if (_connectionState.value == ConnectionState.CONNECTING ||
+            _connectionState.value == ConnectionState.CONNECTED
+        ) {
+            return
+        }
+
+        // Step 1: Check paired devices
+        val pairedDevices = getObdDevices()
+        if (pairedDevices.isNotEmpty()) {
+            Log.i(TAG, "Found ${pairedDevices.size} paired OBD device(s), connecting to first...")
+            connect(pairedDevices.first())
+            return
+        }
+
+        // Step 2: Scan BLE for unpaired devices
+        Log.i(TAG, "No paired OBD devices found, scanning BLE...")
+        val bleDevices = scanForBleDevices()
+        if (bleDevices.isNotEmpty()) {
+            Log.i(TAG, "Found ${bleDevices.size} BLE OBD device(s), connecting to first...")
+            connect(bleDevices.first())
+            return
+        }
+
+        Log.w(TAG, "No OBD devices found via pairing or BLE scan")
+        _connectionState.value = ConnectionState.ERROR
     }
 
     /**
@@ -151,6 +423,89 @@ class ObdManager(context: Context) {
     }
 
     // ---------------------------------------------------------------
+    // Connection strategies
+    // ---------------------------------------------------------------
+
+    /**
+     * Attempts a BLE GATT connection. Returns true if the connection was established
+     * and services were discovered successfully, false otherwise.
+     */
+    @SuppressLint("MissingPermission")
+    private suspend fun tryConnectBle(device: BluetoothDevice): Boolean {
+        isBle = false
+        bleResponseBuffer.clear()
+        bleResponseContinuation = null
+
+        return withContext(Dispatchers.Main) {
+            try {
+                // connectGatt must be called on the main thread for reliable behaviour
+                val g = device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
+                gatt = g
+
+                // Wait for onServicesDiscovered to set state to CONNECTED (or ERROR)
+                val deadline = System.currentTimeMillis() + 10_000L
+                while (_connectionState.value == ConnectionState.CONNECTING &&
+                    System.currentTimeMillis() < deadline
+                ) {
+                    delay(100)
+                }
+
+                if (_connectionState.value != ConnectionState.CONNECTED || !isBle) {
+                    // Cleanup partial BLE connection
+                    try { g.close() } catch (_: Exception) { }
+                    gatt = null
+                    writeCharacteristic = null
+                    isBle = false
+                    return@withContext false
+                }
+
+                // Small settling delay then initialize ELM327 over BLE
+                delay(500)
+                withContext(Dispatchers.IO) {
+                    initElm327()
+                }
+
+                Log.i(TAG, "BLE ELM327 initialised on ${device.name}")
+                startQueryLoop()
+                true
+            } catch (e: Exception) {
+                Log.e(TAG, "BLE connect exception", e)
+                cleanupBle()
+                false
+            }
+        }
+    }
+
+    /**
+     * Classic Bluetooth SPP (RFCOMM) connection.
+     */
+    @SuppressLint("MissingPermission")
+    private suspend fun tryConnectClassic(device: BluetoothDevice) {
+        withContext(Dispatchers.IO) {
+            try {
+                val btSocket = device.createRfcommSocketToServiceRecord(SPP_UUID)
+                socket = btSocket
+                btSocket.connect()
+
+                inputStream = btSocket.inputStream
+                outputStream = btSocket.outputStream
+
+                initElm327()
+
+                isBle = false
+                _connectionState.value = ConnectionState.CONNECTED
+                Log.i(TAG, "Classic SPP connected to ${device.name}")
+
+                startQueryLoop()
+            } catch (e: IOException) {
+                Log.e(TAG, "Classic SPP connection failed", e)
+                cleanupConnection()
+                _connectionState.value = ConnectionState.ERROR
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------
     // ELM327 init
     // ---------------------------------------------------------------
 
@@ -159,7 +514,13 @@ class ObdManager(context: Context) {
         sendCommand("ATZ")
         delay(RESET_DELAY_MS)
         // Flush any reset banner text
-        drainInput()
+        if (isBle) {
+            // For BLE, give time for notification chunks to arrive and clear them
+            delay(500)
+            bleResponseBuffer.clear()
+        } else {
+            drainInput()
+        }
 
         // ATE0 — echo off
         sendCommandAndRead("ATE0")
@@ -318,20 +679,39 @@ class ObdManager(context: Context) {
     }
 
     // ---------------------------------------------------------------
-    // Low-level Bluetooth I/O
+    // Low-level I/O — dispatches to BLE or classic depending on mode
     // ---------------------------------------------------------------
 
+    @SuppressLint("MissingPermission")
     private fun sendCommand(command: String) {
+        if (isBle) {
+            sendCommandBle(command)
+        } else {
+            sendCommandClassic(command)
+        }
+    }
+
+    private suspend fun sendCommandAndRead(command: String): String? {
+        return if (isBle) {
+            sendCommandAndReadBle(command)
+        } else {
+            sendCommandAndReadClassic(command)
+        }
+    }
+
+    // ---- Classic Bluetooth I/O ----
+
+    private fun sendCommandClassic(command: String) {
         try {
             val os = outputStream ?: return
             os.write("$command\r".toByteArray())
             os.flush()
         } catch (e: IOException) {
-            Log.e(TAG, "Send failed: $command", e)
+            Log.e(TAG, "Classic send failed: $command", e)
         }
     }
 
-    private suspend fun sendCommandAndRead(command: String): String? {
+    private suspend fun sendCommandAndReadClassic(command: String): String? {
         return withContext(Dispatchers.IO) {
             try {
                 val os = outputStream ?: return@withContext null
@@ -340,19 +720,19 @@ class ObdManager(context: Context) {
                 os.write("$command\r".toByteArray())
                 os.flush()
 
-                readResponse(inputStream = ins)
+                readResponseClassic(inputStream = ins)
             } catch (e: IOException) {
-                Log.e(TAG, "I/O error for command: $command", e)
+                Log.e(TAG, "Classic I/O error for command: $command", e)
                 null
             }
         }
     }
 
     /**
-     * Reads bytes from the input stream until the ELM327 prompt character '>'
+     * Reads bytes from the classic BT input stream until the ELM327 prompt character '>'
      * is received or the read timeout is reached.
      */
-    private suspend fun readResponse(inputStream: InputStream): String? {
+    private suspend fun readResponseClassic(inputStream: InputStream): String? {
         return withContext(Dispatchers.IO) {
             val buffer = StringBuilder()
             val deadline = System.currentTimeMillis() + READ_TIMEOUT_MS
@@ -369,7 +749,7 @@ class ObdManager(context: Context) {
                     }
                 }
             } catch (e: IOException) {
-                Log.e(TAG, "Read error", e)
+                Log.e(TAG, "Classic read error", e)
                 return@withContext null
             }
             val result = buffer.toString().trim()
@@ -381,8 +761,60 @@ class ObdManager(context: Context) {
         }
     }
 
+    // ---- BLE GATT I/O ----
+
+    @SuppressLint("MissingPermission")
+    private fun sendCommandBle(command: String) {
+        val g = gatt ?: return
+        val wc = writeCharacteristic ?: return
+        try {
+            val payload = "$command\r".toByteArray()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                g.writeCharacteristic(
+                    wc,
+                    payload,
+                    BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                wc.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                @Suppress("DEPRECATION")
+                wc.value = payload
+                @Suppress("DEPRECATION")
+                g.writeCharacteristic(wc)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "BLE send failed: $command", e)
+        }
+    }
+
     /**
-     * Drains any pending bytes in the input stream (used after ATZ reset).
+     * Sends an ELM327 command over BLE and suspends until a full response
+     * (terminated by '>') is received via the notification callback,
+     * or until the BLE read timeout elapses.
+     */
+    @SuppressLint("MissingPermission")
+    private suspend fun sendCommandAndReadBle(command: String): String? {
+        return bleMutex.withLock {
+            bleResponseBuffer.clear()
+
+            // Send the command
+            sendCommandBle(command)
+
+            // Wait for response via suspendCancellableCoroutine
+            withTimeoutOrNull(BLE_READ_TIMEOUT_MS) {
+                suspendCancellableCoroutine { cont ->
+                    bleResponseContinuation = cont
+                    cont.invokeOnCancellation {
+                        bleResponseContinuation = null
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Drains any pending bytes in the classic BT input stream (used after ATZ reset).
      */
     private fun drainInput() {
         try {
@@ -395,10 +827,31 @@ class ObdManager(context: Context) {
         }
     }
 
+    // ---------------------------------------------------------------
+    // Cleanup
+    // ---------------------------------------------------------------
+
+    @SuppressLint("MissingPermission")
+    private fun cleanupBle() {
+        try {
+            gatt?.close()
+        } catch (_: Exception) { }
+        gatt = null
+        writeCharacteristic = null
+        isBle = false
+        bleResponseBuffer.clear()
+        bleResponseContinuation?.let {
+            bleResponseContinuation = null
+            it.resume(null)
+        }
+    }
+
     /**
-     * Closes the Bluetooth socket and nulls out stream references.
+     * Closes all Bluetooth resources (classic + BLE) and nulls out references.
      */
+    @SuppressLint("MissingPermission")
     private fun cleanupConnection() {
+        // Classic cleanup
         try {
             inputStream?.close()
         } catch (_: IOException) { }
@@ -411,5 +864,8 @@ class ObdManager(context: Context) {
         inputStream = null
         outputStream = null
         socket = null
+
+        // BLE cleanup
+        cleanupBle()
     }
 }

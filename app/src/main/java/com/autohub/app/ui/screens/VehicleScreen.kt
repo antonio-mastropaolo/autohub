@@ -57,8 +57,8 @@ fun VehicleScreen(car: CarState) {
                             LabelText("NEXT SERVICE")
                             Spacer(Modifier.height(3.dp))
                             Row(verticalAlignment = Alignment.Bottom) {
-                                Text("%,d".format(car.serviceIn), style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraLight))
-                                Text("mi", style = TextStyle(fontSize = 7.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
+                                Text("%,d".format(car.serviceIn), style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.ExtraLight))
+                                Text("mi", style = TextStyle(fontSize = 9.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
                                     modifier = Modifier.padding(start = 2.dp, bottom = 2.dp))
                             }
                         }
@@ -106,11 +106,11 @@ fun VehicleScreen(car: CarState) {
                                 horizontalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 StatusDot(if (s.on) C.Green else C.TextMuted, 4.dp)
-                                Text(s.label, style = TextStyle(fontSize = 9.sp, color = if (s.on) C.TextSub else C.TextMuted),
+                                Text(s.label, style = TextStyle(fontSize = 11.sp, color = if (s.on) C.TextSub else C.TextMuted),
                                     modifier = Modifier.weight(1f))
                                 Text(
                                     s.status ?: if (s.on) "ON" else "OFF",
-                                    style = TextStyle(fontSize = 7.sp, fontWeight = FontWeight.Bold,
+                                    style = TextStyle(fontSize = 9.sp, fontWeight = FontWeight.Bold,
                                         color = if (s.on) C.Green else C.TextMuted, letterSpacing = 0.6.sp)
                                 )
                             }
@@ -137,9 +137,9 @@ private fun FluidRow(name: String, value: Int, extra: String?) {
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         StatusDot(c, 4.dp)
-        Text(name, style = TextStyle(fontSize = 9.sp, color = C.TextSub, fontWeight = FontWeight.Medium), modifier = Modifier.weight(1f))
-        if (extra != null) Text(extra, style = TextStyle(fontSize = 7.sp, color = C.TextMuted))
-        Text("$value%", style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
+        Text(name, style = TextStyle(fontSize = 11.sp, color = C.TextSub, fontWeight = FontWeight.Medium), modifier = Modifier.weight(1f))
+        if (extra != null) Text(extra, style = TextStyle(fontSize = 9.sp, color = C.TextMuted))
+        Text("$value%", style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
         ProgressBar(value.toFloat(), color = c, modifier = Modifier.width(40.dp))
     }
 }
@@ -152,8 +152,8 @@ private fun ElecRow(label: String, value: String, color: Color) {
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
             StatusDot(color, 3.dp)
-            Text(label, style = TextStyle(fontSize = 9.sp, color = C.TextSub))
+            Text(label, style = TextStyle(fontSize = 11.sp, color = C.TextSub))
         }
-        Text(value, style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
+        Text(value, style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Light, color = C.TextPrimary))
     }
 }

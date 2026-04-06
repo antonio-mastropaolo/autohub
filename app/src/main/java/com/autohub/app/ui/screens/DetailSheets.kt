@@ -79,7 +79,7 @@ private fun SheetOverlay(
                             title,
                             style = TextStyle(
                                 color = C.TextPrimary,
-                                fontSize = 16.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Light,
                             ),
                         )
@@ -111,8 +111,8 @@ private fun DetailRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = TextStyle(color = C.TextSub, fontSize = 11.sp, fontWeight = FontWeight.Normal))
-        Text(value, style = TextStyle(color = valueColor, fontSize = 12.sp, fontWeight = FontWeight.Light))
+        Text(label, style = TextStyle(color = C.TextSub, fontSize = 13.sp, fontWeight = FontWeight.Normal))
+        Text(value, style = TextStyle(color = valueColor, fontSize = 14.sp, fontWeight = FontWeight.Light))
     }
 }
 
@@ -208,7 +208,7 @@ fun EngineDetailSheet(car: CarState, onDismiss: () -> Unit) {
             "2.0L TSI Turbocharged I4",
             style = TextStyle(
                 color = C.TextPrimary,
-                fontSize = 14.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.Light,
             ),
         )
@@ -216,7 +216,7 @@ fun EngineDetailSheet(car: CarState, onDismiss: () -> Unit) {
             "2024 VW Atlas Cross Sport",
             style = TextStyle(
                 color = C.TextMuted,
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Normal,
             ),
         )
@@ -326,7 +326,7 @@ fun EngineDetailSheet(car: CarState, onDismiss: () -> Unit) {
             Spacer(Modifier.height(4.dp))
             Text(
                 "Normal range: 25\u201365 PSI",
-                style = TextStyle(color = C.TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Normal),
+                style = TextStyle(color = C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Normal),
             )
         }
     }
@@ -425,7 +425,7 @@ fun TireDetailSheet(car: CarState, onDismiss: () -> Unit) {
                     },
                     style = TextStyle(
                         color = C.TextPrimary,
-                        fontSize = 12.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Light,
                     ),
                 )
@@ -433,7 +433,7 @@ fun TireDetailSheet(car: CarState, onDismiss: () -> Unit) {
             Spacer(Modifier.height(4.dp))
             Text(
                 "VW Recommended: 36 PSI (all four)",
-                style = TextStyle(color = C.TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Normal),
+                style = TextStyle(color = C.TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Normal),
             )
         }
     }
@@ -459,7 +459,7 @@ private fun TireCardContent(label: String, psi: Int, temp: Int) {
                 label,
                 style = TextStyle(
                     color = C.TextMuted,
-                    fontSize = 9.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.sp,
                 ),
@@ -470,7 +470,7 @@ private fun TireCardContent(label: String, psi: Int, temp: Int) {
                     "$psi",
                     style = TextStyle(
                         color = C.TextPrimary,
-                        fontSize = 22.sp,
+                        fontSize = 26.sp,
                         fontWeight = FontWeight.ExtraLight,
                     ),
                 )
@@ -478,7 +478,7 @@ private fun TireCardContent(label: String, psi: Int, temp: Int) {
                     " PSI",
                     style = TextStyle(
                         color = C.TextMuted,
-                        fontSize = 8.sp,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
                     ),
                     modifier = Modifier.padding(bottom = 3.dp),
@@ -489,7 +489,7 @@ private fun TireCardContent(label: String, psi: Int, temp: Int) {
                 "$temp\u00b0F",
                 style = TextStyle(
                     color = C.TextSub,
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Normal,
                 ),
             )
@@ -521,7 +521,7 @@ fun BatteryDetailSheet(car: CarState, onDismiss: () -> Unit) {
                     "%.1f".format(car.batteryVoltage),
                     style = TextStyle(
                         color = voltageColor,
-                        fontSize = 48.sp,
+                        fontSize = 54.sp,
                         fontWeight = FontWeight.Thin,
                     ),
                 )
@@ -529,7 +529,7 @@ fun BatteryDetailSheet(car: CarState, onDismiss: () -> Unit) {
                     "VOLTS",
                     style = TextStyle(
                         color = C.TextMuted,
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp,
                     ),
@@ -599,11 +599,11 @@ fun BatteryDetailSheet(car: CarState, onDismiss: () -> Unit) {
                     Spacer(Modifier.height(2.dp))
                     Text(
                         "Low",
-                        style = TextStyle(color = C.TextSub, fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                        style = TextStyle(color = C.TextSub, fontSize = 11.sp, fontWeight = FontWeight.Bold),
                     )
                     Text(
                         "< 12.0V",
-                        style = TextStyle(color = C.TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Normal),
+                        style = TextStyle(color = C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Normal),
                     )
                 }
                 Column(
@@ -614,11 +614,11 @@ fun BatteryDetailSheet(car: CarState, onDismiss: () -> Unit) {
                     Spacer(Modifier.height(2.dp))
                     Text(
                         "Normal",
-                        style = TextStyle(color = C.TextSub, fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                        style = TextStyle(color = C.TextSub, fontSize = 11.sp, fontWeight = FontWeight.Bold),
                     )
                     Text(
                         "12.0\u201312.8V",
-                        style = TextStyle(color = C.TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Normal),
+                        style = TextStyle(color = C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Normal),
                     )
                 }
                 Column(
@@ -629,11 +629,11 @@ fun BatteryDetailSheet(car: CarState, onDismiss: () -> Unit) {
                     Spacer(Modifier.height(2.dp))
                     Text(
                         "Charging",
-                        style = TextStyle(color = C.TextSub, fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                        style = TextStyle(color = C.TextSub, fontSize = 11.sp, fontWeight = FontWeight.Bold),
                     )
                     Text(
                         "13.5\u201314.8V",
-                        style = TextStyle(color = C.TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Normal),
+                        style = TextStyle(color = C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Normal),
                     )
                 }
             }
@@ -660,7 +660,7 @@ fun TripDetailSheet(car: CarState, onDismiss: () -> Unit) {
                     "%.1f".format(car.trip),
                     style = TextStyle(
                         color = C.TextPrimary,
-                        fontSize = 42.sp,
+                        fontSize = 48.sp,
                         fontWeight = FontWeight.Thin,
                     ),
                 )
@@ -668,7 +668,7 @@ fun TripDetailSheet(car: CarState, onDismiss: () -> Unit) {
                     "MILES",
                     style = TextStyle(
                         color = C.TextMuted,
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp,
                     ),
@@ -703,11 +703,11 @@ fun TripDetailSheet(car: CarState, onDismiss: () -> Unit) {
             ) {
                 Text(
                     "Current: ${car.speed} mph",
-                    style = TextStyle(color = C.TextSub, fontSize = 10.sp, fontWeight = FontWeight.Normal),
+                    style = TextStyle(color = C.TextSub, fontSize = 12.sp, fontWeight = FontWeight.Normal),
                 )
                 Text(
                     "Peak: ${car.peakSpeed} mph",
-                    style = TextStyle(color = C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.Normal),
+                    style = TextStyle(color = C.TextMuted, fontSize = 12.sp, fontWeight = FontWeight.Normal),
                 )
             }
             Spacer(Modifier.height(6.dp))
@@ -741,7 +741,7 @@ fun TripDetailSheet(car: CarState, onDismiss: () -> Unit) {
                         "${car.drivingScore}/100",
                         style = TextStyle(
                             color = C.TextPrimary,
-                            fontSize = 20.sp,
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.ExtraLight,
                         ),
                     )
@@ -753,7 +753,7 @@ fun TripDetailSheet(car: CarState, onDismiss: () -> Unit) {
                         },
                         style = TextStyle(
                             color = C.TextSub,
-                            fontSize = 10.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Normal,
                         ),
                     )
@@ -773,7 +773,7 @@ fun TripDetailSheet(car: CarState, onDismiss: () -> Unit) {
                 "BREAKDOWN",
                 style = TextStyle(
                     color = C.TextMuted,
-                    fontSize = 7.sp,
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 1.2.sp,
                 ),

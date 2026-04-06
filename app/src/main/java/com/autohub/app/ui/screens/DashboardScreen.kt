@@ -43,7 +43,7 @@ fun DashboardScreen(car: CarState) {
                     ) {
                         ArcGauge(
                             car.speed.toFloat(), 160f, "SPEED", "MPH",
-                            C.Blue, size = 155.dp
+                            C.Blue, size = 170.dp
                         )
                         Spacer(Modifier.height(4.dp))
                         Row(
@@ -51,19 +51,19 @@ fun DashboardScreen(car: CarState) {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(
-                                Modifier.size(36.dp).clip(RoundedCornerShape(10.dp))
+                                Modifier.size(42.dp).clip(RoundedCornerShape(10.dp))
                                     .background(C.BlueDim)
                                     .border(1.dp, C.Blue.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text(car.gear, style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.ExtraLight, color = C.Blue))
+                                Text(car.gear, style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.ExtraLight, color = C.Blue))
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${car.power}", style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.ExtraLight, color = C.TextPrimary))
+                                Text("${car.power}", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraLight, color = C.TextPrimary))
                                 LabelText("HP")
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("${car.torque}", style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.ExtraLight, color = C.TextPrimary))
+                                Text("${car.torque}", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraLight, color = C.TextPrimary))
                                 LabelText("LB-FT")
                             }
                         }
@@ -93,25 +93,25 @@ fun DashboardScreen(car: CarState) {
                         GlassCard(Modifier.weight(1f)) {
                             LabelText("NOW PLAYING")
                             Spacer(Modifier.height(5.dp))
-                            Text(car.mediaTitle, style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Light, color = C.TextPrimary), maxLines = 1)
-                            Text(car.mediaArtist, style = TextStyle(fontSize = 10.sp, color = C.TextSub), maxLines = 1)
+                            Text(car.mediaTitle, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Light, color = C.TextPrimary), maxLines = 1)
+                            Text(car.mediaArtist, style = TextStyle(fontSize = 12.sp, color = C.TextSub), maxLines = 1)
                             Spacer(Modifier.height(5.dp))
                             ProgressBar(car.mediaProgress, 1f, C.Purple, 2.dp)
                             Spacer(Modifier.height(2.dp))
                             Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-                                Text(car.mediaCurrent, style = TextStyle(fontSize = 7.sp, color = C.TextMuted))
-                                Text(car.mediaDuration, style = TextStyle(fontSize = 7.sp, color = C.TextMuted))
+                                Text(car.mediaCurrent, style = TextStyle(fontSize = 9.sp, color = C.TextMuted))
+                                Text(car.mediaDuration, style = TextStyle(fontSize = 9.sp, color = C.TextMuted))
                             }
                         }
                         GlassCard(Modifier.weight(0.55f)) {
                             LabelText("WEATHER")
                             Spacer(Modifier.height(3.dp))
-                            Text(car.weatherIcon, style = TextStyle(fontSize = 22.sp))
-                            Text("${car.outsideTemp}\u00b0F", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Thin, color = C.TextPrimary))
-                            Text(car.weatherCondition, style = TextStyle(fontSize = 9.sp, color = C.TextSub))
+                            Text(car.weatherIcon, style = TextStyle(fontSize = 26.sp))
+                            Text("${car.outsideTemp}\u00b0F", style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Thin, color = C.TextPrimary))
+                            Text(car.weatherCondition, style = TextStyle(fontSize = 11.sp, color = C.TextSub))
                             Spacer(Modifier.height(2.dp))
                             Text("H:${car.weatherHigh}\u00b0 L:${car.weatherLow}\u00b0",
-                                style = TextStyle(fontSize = 7.sp, fontWeight = FontWeight.Bold, color = C.TextMuted))
+                                style = TextStyle(fontSize = 9.sp, fontWeight = FontWeight.Bold, color = C.TextMuted))
                         }
                     }
 
@@ -119,7 +119,7 @@ fun DashboardScreen(car: CarState) {
                     GlassCard(Modifier.fillMaxWidth()) {
                         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween, Alignment.CenterVertically) {
                             LabelText("EFFICIENCY TREND")
-                            Text("%.1f avg".format(car.avgMpg), style = TextStyle(fontSize = 8.sp, color = C.TextSub))
+                            Text("%.1f avg".format(car.avgMpg), style = TextStyle(fontSize = 10.sp, color = C.TextSub))
                         }
                         Spacer(Modifier.height(4.dp))
                         SparkLine(car.mpgHistory, C.Amber, Modifier.fillMaxWidth().height(24.dp))
@@ -170,8 +170,8 @@ private fun StatMiniCard(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             MiniRingGauge(pct, max, color)
             Row(verticalAlignment = Alignment.Bottom) {
-                Text(value, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.ExtraLight, color = C.TextPrimary))
-                Text(unit, style = TextStyle(fontSize = 7.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
+                Text(value, style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraLight, color = C.TextPrimary))
+                Text(unit, style = TextStyle(fontSize = 9.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
                     modifier = Modifier.padding(start = 2.dp, bottom = 2.dp))
             }
         }
@@ -191,8 +191,8 @@ private fun QuickInfoItem(
         }
         Spacer(Modifier.height(2.dp))
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(value, style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.ExtraLight, color = C.TextPrimary))
-            Text(unit, style = TextStyle(fontSize = 6.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
+            Text(value, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.ExtraLight, color = C.TextPrimary))
+            Text(unit, style = TextStyle(fontSize = 8.sp, fontWeight = FontWeight.Bold, color = C.TextMuted),
                 modifier = Modifier.padding(start = 1.dp, bottom = 1.dp))
         }
     }

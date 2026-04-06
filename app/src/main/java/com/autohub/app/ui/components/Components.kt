@@ -47,7 +47,7 @@ fun GlassCard(
             .background(C.SurfaceAlpha)
             .border(1.dp, C.GlassBorder, RoundedCornerShape(14.dp))
     ) {
-        Column(Modifier.padding(12.dp)) { content() }
+        Column(Modifier.padding(14.dp)) { content() }
     }
 }
 
@@ -56,7 +56,7 @@ fun LabelText(text: String) {
     Text(
         text.uppercase(),
         style = TextStyle(
-            fontSize = 7.sp, fontWeight = FontWeight.Bold,
+            fontSize = 10.sp, fontWeight = FontWeight.Bold,
             color = C.TextMuted, letterSpacing = 1.2.sp
         )
     )
@@ -77,7 +77,7 @@ fun Pill(text: String, color: Color) {
     ) {
         Text(
             text.uppercase(),
-            style = TextStyle(color = color, fontSize = 7.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
+            style = TextStyle(color = color, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp)
         )
     }
 }
@@ -169,16 +169,16 @@ fun ArcGauge(
 
             // Value text
             val vl = tm.measure(value.toInt().toString(),
-                TextStyle(color = C.TextPrimary, fontSize = 28.sp, fontWeight = FontWeight.ExtraLight, textAlign = TextAlign.Center))
+                TextStyle(color = C.TextPrimary, fontSize = 34.sp, fontWeight = FontWeight.ExtraLight, textAlign = TextAlign.Center))
             drawText(vl, topLeft = Offset(cx - vl.size.width / 2f, cy + 14f))
 
             // Unit text
             val ul = tm.measure(unit,
-                TextStyle(color = C.TextMuted, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, textAlign = TextAlign.Center))
+                TextStyle(color = C.TextMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp, textAlign = TextAlign.Center))
             drawText(ul, topLeft = Offset(cx - ul.size.width / 2f, cy + 42f))
         }
 
-        Text(label, style = TextStyle(color = C.TextSub, fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp),
+        Text(label, style = TextStyle(color = C.TextSub, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.2.sp),
             modifier = Modifier.offset(y = (-4).dp))
     }
 }
@@ -256,7 +256,7 @@ fun GForceIndicator(
         drawCircle(color.copy(alpha = 0.2f), 10f, Offset(dx, dy))
         drawCircle(color, 4f, Offset(dx, dy))
 
-        val gl = tm.measure("G", TextStyle(color = C.TextMuted, fontSize = 6.sp, fontWeight = FontWeight.Bold))
+        val gl = tm.measure("G", TextStyle(color = C.TextMuted, fontSize = 8.sp, fontWeight = FontWeight.Bold))
         drawText(gl, topLeft = Offset(cx - gl.size.width / 2f, cy + r + 2f))
     }
 }
@@ -299,14 +299,14 @@ fun CompassRose(
             val a = Math.toRadians((bearing - heading - 90).toDouble())
             val lr = r - 26f
             val isN = lbl == "N"
-            val lay = tm.measure(lbl, TextStyle(color = if (isN) color else C.TextSub, fontSize = if (isN) 13.sp else 9.sp, fontWeight = FontWeight.Bold))
+            val lay = tm.measure(lbl, TextStyle(color = if (isN) color else C.TextSub, fontSize = if (isN) 15.sp else 11.sp, fontWeight = FontWeight.Bold))
             val px = cx + cos(a).toFloat() * lr - lay.size.width / 2f
             val py = cy + sin(a).toFloat() * lr - lay.size.height / 2f
             drawText(lay, topLeft = Offset(px, py))
         }
 
         // Center heading value
-        val hl = tm.measure("$heading\u00b0", TextStyle(color = C.TextPrimary, fontSize = 24.sp, fontWeight = FontWeight.Thin, textAlign = TextAlign.Center))
+        val hl = tm.measure("$heading\u00b0", TextStyle(color = C.TextPrimary, fontSize = 28.sp, fontWeight = FontWeight.Thin, textAlign = TextAlign.Center))
         drawText(hl, topLeft = Offset(cx - hl.size.width / 2f, cy - hl.size.height / 2f))
     }
 }
@@ -334,9 +334,9 @@ fun TempKnob(
         drawArc(color = color, startAngle = 120f, sweepAngle = 300f * pct, useCenter = false, style = Stroke(4f, cap = StrokeCap.Round),
             topLeft = Offset(cx - r, cy - r), size = Size(r * 2, r * 2))
 
-        val vl = tm.measure("$value", TextStyle(color = C.TextPrimary, fontSize = 30.sp, fontWeight = FontWeight.Thin, textAlign = TextAlign.Center))
+        val vl = tm.measure("$value", TextStyle(color = C.TextPrimary, fontSize = 34.sp, fontWeight = FontWeight.Thin, textAlign = TextAlign.Center))
         drawText(vl, topLeft = Offset(cx - vl.size.width / 2f, cy - vl.size.height / 2f - 4f))
-        val ul = tm.measure("\u00b0F", TextStyle(color = C.TextMuted, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center))
+        val ul = tm.measure("\u00b0F", TextStyle(color = C.TextMuted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center))
         drawText(ul, topLeft = Offset(cx - ul.size.width / 2f, cy + vl.size.height / 2f - 10f))
     }
 }
