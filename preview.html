@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AutoHub OS 2.0 Preview</title>
+<style>
+:root{--bg:#050508;--surface:#0C0C14;--surface-a:rgba(12,12,20,.9);--glass-border:rgba(255,255,255,.05);--glass:rgba(255,255,255,.025);--dock-bg:#080810;--dock-border:rgba(255,255,255,.04);--blue:#5B9CF5;--blue-dim:rgba(91,156,245,.08);--cyan:#67E8F9;--green:#4ADE80;--amber:#FBBF24;--red:#FB7185;--purple:#A78BFA;--txt:#F0F0F5;--txt2:#9898B0;--txts:#7C7C96;--txtm:#5B5B78;--txtf:#2A2A3A}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;overflow:hidden;height:100vh;width:100vw}
+.app{display:flex;flex-direction:column;height:100vh;position:relative;overflow:hidden}
+.glow1,.glow2{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none;z-index:0}
+.glow1{width:400px;height:400px;top:-120px;left:-60px;background:rgba(91,156,245,.08)}
+.glow2{width:300px;height:300px;bottom:-60px;right:-80px;background:rgba(167,139,250,.05)}
+
+/* Status Bar */
+.status-bar{display:flex;align-items:center;background:var(--dock-bg);border-bottom:0.5px solid var(--dock-border);padding:6px 12px;z-index:2;gap:8px;flex-shrink:0}
+.sb-speed{font-size:22px;font-weight:100;letter-spacing:-.5px}
+.sb-unit{font-size:8px;font-weight:700;color:var(--txtm)}
+.sb-gear{width:20px;height:20px;border-radius:5px;background:var(--blue-dim);border:.5px solid rgba(91,156,245,.2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:300;color:var(--blue)}
+.sb-rpm{width:80px;height:4px;border-radius:4px;background:rgba(255,255,255,.04);overflow:hidden}
+.sb-rpm-fill{height:100%;border-radius:4px;transition:width 1.2s}
+.sb-rpm-label{font-size:7px;font-weight:700;color:var(--txtm);margin-left:4px}
+.sb-spacer{flex:1}
+.sb-weather{font-size:10px;color:var(--txt2)}
+.sb-divider{width:.5px;height:14px;background:var(--txtf);margin:0 4px}
+.sb-signal{display:flex;gap:1.5px;align-items:flex-end}
+.sb-signal-bar{width:3px;border-radius:1px}
+.sb-phone{font-size:8px;color:var(--txts);margin-left:4px}
+.sb-live{width:4px;height:4px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sb-live-text{font-size:6px;font-weight:700;color:var(--txtm);letter-spacing:.6px;margin-left:4px}
+.sb-clock{font-size:16px;font-weight:100;letter-spacing:-.5px;margin-left:8px}
+.sb-ampm{font-size:6px;font-weight:700;color:var(--txtm);margin-left:2px}
+
+/* Body */
+.body{display:flex;flex:1;overflow:hidden}
+
+/* Dock */
+.dock{width:48px;background:var(--dock-bg);border-right:.5px solid var(--dock-border);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:8px 0;flex-shrink:0;z-index:2}
+.dock-logo{width:30px;height:30px;border-radius:8px;background:var(--blue-dim);border:.5px solid rgba(91,156,245,.15);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--blue)}
+.dock-nav{display:flex;flex-direction:column;gap:2px}
+.dock-item{width:48px;display:flex;flex-direction:column;align-items:center;padding:5px 0;cursor:pointer;position:relative;border-radius:6px;user-select:none}
+.dock-item:hover .di-icon{color:var(--txts)}
+.dock-item.active .di-icon{color:var(--blue)}
+.dock-item.active .di-label{color:var(--blue)}
+.dock-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:2px;height:16px;border-radius:2px;background:var(--blue)}
+.di-icon{font-size:14px;color:var(--txtm);transition:color .2s}
+.di-label{font-size:5px;font-weight:700;color:var(--txtm);letter-spacing:.5px;margin-top:1px}
+.dock-settings{font-size:14px;color:var(--txtm);cursor:pointer}
+
+/* Content */
+.content{flex:1;overflow-y:auto;padding:8px 12px 4px 8px;z-index:1}
+.content::-webkit-scrollbar{width:2px}
+.content::-webkit-scrollbar-thumb{background:var(--txtf);border-radius:2px}
+.screen{display:none;animation:fadeIn .2s}
+.screen.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Glass Card */
+.gc{background:var(--surface-a);border:1px solid var(--glass-border);border-radius:14px;padding:12px;margin-bottom:8px}
+.label{font-size:7px;font-weight:700;color:var(--txtm);letter-spacing:1.2px;text-transform:uppercase}
+.row{display:flex;gap:8px}.row>.gc{flex:1}
+.dot{border-radius:50%;display:inline-block;flex-shrink:0}
+.pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:7px;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
+.progress{height:3px;border-radius:3px;background:rgba(255,255,255,.04);overflow:hidden;width:100%}
+.progress-fill{height:100%;border-radius:3px;transition:width 1.2s}
+.val-lg{font-size:20px;font-weight:200}.val-xl{font-size:28px;font-weight:100}.val-md{font-size:16px;font-weight:200}.val-sm{font-size:13px;font-weight:200}
+.unit{font-size:7px;font-weight:700;color:var(--txtm);margin-left:2px}
+.info-row{display:flex;align-items:center;justify-content:space-between;padding:3px 0}
+.info-label{font-size:10px;color:var(--txts);font-weight:500;display:flex;align-items:center;gap:6px}
+.info-val{font-size:10px;font-weight:300}
+
+/* Footer */
+.footer{text-align:center;padding:4px 0;z-index:2;flex-shrink:0}
+.footer-text{font-size:5px;font-weight:700;color:var(--txtm);letter-spacing:1.4px}
+
+/* Dashboard specific */
+.dash-main{display:flex;gap:8px}
+.dash-left{flex:.42;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dash-right{flex:.58;display:flex;flex-direction:column;gap:8px}
+.gauge-row{display:flex;align-items:center;gap:16px;justify-content:center;margin-top:4px}
+.gear-badge{width:36px;height:36px;border-radius:10px;background:var(--blue-dim);border:1px solid rgba(91,156,245,.2);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:200;color:var(--blue)}
+.stat-mini{display:flex;align-items:center;gap:6px;margin-top:5px}
+.quick-strip{display:flex;gap:6px}
+.quick-strip>.gc{flex:1}
+.sparkline-gc{flex:1.2!important}
+
+/* Perf */
+.perf-gauges{display:flex;align-items:center;justify-content:space-evenly}
+.gforce{position:relative}
+
+/* Vehicle */
+.sys-grid{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.sys-item{flex:1 1 calc(50% - 3px);display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:8px;min-width:0}
+.sys-item.on{background:var(--glass)}
+.sys-name{font-size:9px;flex:1}.sys-status{font-size:7px;font-weight:700;letter-spacing:.6px}
+
+/* Climate */
+.climate-zones{display:flex;align-items:center;justify-content:space-evenly}
+.zone{text-align:center}
+.fan-bars{display:flex;gap:3px;align-items:flex-end;justify-content:center}
+.fan-bar{width:10px;border-radius:2px}
+.seat-dots{display:flex;gap:2px;justify-content:center;margin-top:3px}
+.seat-dot{width:7px;height:7px;border-radius:2px}
+
+/* Media */
+.album-art{width:85px;height:85px;border-radius:12px;background:linear-gradient(135deg,var(--purple),var(--blue));display:flex;align-items:center;justify-content:center;font-size:32px;color:rgba(255,255,255,.25);flex-shrink:0}
+.controls{display:flex;align-items:center;justify-content:center;gap:24px;margin-top:10px}
+.play-btn{width:38px;height:38px;border-radius:50%;background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--purple);cursor:pointer}
+.ctrl-btn{font-size:20px;color:var(--txts);cursor:pointer}
+.eq-bar{border-radius:2px;transition:height .3s}
+
+/* Nav */
+.sat-bars{display:flex;gap:2px;margin-top:4px}
+.sat-bar{flex:1;border-radius:2px;transition:height .3s}
+
+/* Thermal */
+.thermal-row{margin-bottom:4px}
+.thermal-header{display:flex;justify-content:space-between;font-size:8px;margin-bottom:2px}
+.thermal-name{color:var(--txts);font-weight:500}.thermal-val{color:var(--txt)}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="glow1"></div><div class="glow2"></div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <span class="sb-speed" id="sbSpeed">47</span><span class="sb-unit"> MPH</span>
+  <div class="sb-gear" id="sbGear">D</div>
+  <div class="sb-rpm"><div class="sb-rpm-fill" id="sbRpm" style="width:30%;background:var(--blue)"></div></div>
+  <span class="sb-rpm-label" id="sbRpmLabel">2.4K</span>
+  <div class="sb-spacer"></div>
+  <span class="sb-weather" id="sbWeather">☀ 72°</span>
+  <div class="sb-divider"></div>
+  <div class="sb-signal" id="sbSignal"></div>
+  <span class="sb-phone" id="sbPhone">72%</span>
+  <div class="sb-divider"></div>
+  <div class="sb-live"></div><span class="sb-live-text">LIVE</span>
+  <span class="sb-clock" id="sbClock"></span><span class="sb-ampm" id="sbAmpm"></span>
+</div>
+
+<!-- BODY -->
+<div class="body">
+  <!-- DOCK -->
+  <div class="dock">
+    <div class="dock-logo">◈</div>
+    <div class="dock-nav">
+      <div class="dock-item active" data-tab="dashboard" onclick="switchTab('dashboard')"><span class="di-icon">⌂</span><span class="di-label">HOME</span></div>
+      <div class="dock-item" data-tab="performance" onclick="switchTab('performance')"><span class="di-icon">⊙</span><span class="di-label">PERF</span></div>
+      <div class="dock-item" data-tab="vehicle" onclick="switchTab('vehicle')"><span class="di-icon">◇</span><span class="di-label">CAR</span></div>
+      <div class="dock-item" data-tab="climate" onclick="switchTab('climate')"><span class="di-icon">✱</span><span class="di-label">HVAC</span></div>
+      <div class="dock-item" data-tab="media" onclick="switchTab('media')"><span class="di-icon">♪</span><span class="di-label">MEDIA</span></div>
+      <div class="dock-item" data-tab="nav" onclick="switchTab('nav')"><span class="di-icon">◎</span><span class="di-label">NAV</span></div>
+    </div>
+    <span class="dock-settings">⚙</span>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+  <!-- DASHBOARD -->
+  <div class="screen active" id="s-dashboard">
+    <div class="dash-main">
+      <div class="gc dash-left">
+        <svg id="mainGauge" width="160" height="160" viewBox="0 0 160 160"></svg>
+        <div style="font-size:8px;font-weight:700;color:var(--txts);letter-spacing:1.2px;margin-top:-4px">SPEED</div>
+        <div class="gauge-row">
+          <div class="gear-badge" id="dashGear">D</div>
+          <div style="text-align:center"><span class="val-md" id="dashHP">42</span><br><span class="label">HP</span></div>
+          <div style="text-align:center"><span class="val-md" id="dashTQ">156</span><br><span class="label">LB-FT</span></div>
+        </div>
+      </div>
+      <div class="dash-right">
+        <div class="row">
+          <div class="gc"><span class="label">FUEL</span><div class="stat-mini"><svg id="fuelR" width="32" height="32" viewBox="0 0 32 32"></svg><div><span class="val-md" id="fuelV">72</span><span class="unit">%</span></div></div></div>
+          <div class="gc"><span class="label">RANGE</span><div class="stat-mini"><svg id="rangeR" width="32" height="32" viewBox="0 0 32 32"></svg><div><span class="val-md" id="rangeV">248</span><span class="unit">mi</span></div></div></div>
+          <div class="gc"><span class="label">EFFICIENCY</span><div class="stat-mini"><svg id="effR" width="32" height="32" viewBox="0 0 32 32"></svg><div><span class="val-md" id="effV">28.4</span><span class="unit">mpg</span></div></div></div>
+        </div>
+        <div class="row">
+          <div class="gc"><span class="label">NOW PLAYING</span><div style="margin-top:5px"><div class="val-sm" id="mTitle">Blinding Lights</div><div style="font-size:10px;color:var(--txts)" id="mArtist">The Weeknd</div><div style="margin-top:5px"><div class="progress"><div class="progress-fill" id="mProg" style="width:67%;background:var(--purple)"></div></div><div style="display:flex;justify-content:space-between;margin-top:2px"><span style="font-size:7px;color:var(--txtm)" id="mCur">2:14</span><span style="font-size:7px;color:var(--txtm)">3:20</span></div></div></div></div>
+          <div class="gc" style="flex:.55"><span class="label">WEATHER</span><div style="margin-top:3px;font-size:22px" id="wIcon">☀</div><div><span style="font-size:18px;font-weight:100" id="wTemp">72</span><span style="font-size:10px;color:var(--txtm)">°F</span></div><div style="font-size:9px;color:var(--txts)" id="wCond">Clear</div><div style="font-size:7px;font-weight:700;color:var(--txtm);margin-top:2px" id="wHL">H:78° L:58°</div></div>
+        </div>
+        <div class="gc"><div style="display:flex;justify-content:space-between;align-items:center"><span class="label">EFFICIENCY TREND</span><span style="font-size:8px;color:var(--txts)" id="avgMpg">26.8 avg</span></div><canvas id="mpgSpark" height="24" style="width:100%;margin-top:4px"></canvas></div>
+      </div>
+    </div>
+    <div class="quick-strip" id="quickStrip"></div>
+  </div>
+
+  <!-- PERFORMANCE -->
+  <div class="screen" id="s-performance">
+    <div class="gc"><div class="perf-gauges"><svg id="perfSpeed" width="145" height="145" viewBox="0 0 150 150"></svg><svg id="gforceCanvas" width="95" height="95" viewBox="0 0 100 100"></svg><svg id="perfRpm" width="145" height="145" viewBox="0 0 150 150"></svg></div></div>
+    <div class="row" id="perfStats"></div>
+    <div class="row"><div class="gc" id="perfRecords"><span class="label">PERFORMANCE RECORDS</span><div id="recordsList" style="margin-top:6px"></div></div><div class="gc" style="flex:.7"><span class="label">SPEED HISTORY</span><canvas id="speedSpark" height="60" style="width:100%;margin-top:8px"></canvas><div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:6px;color:var(--txtm)">2m ago</span><span style="font-size:6px;color:var(--txtm)">now</span></div></div></div>
+  </div>
+
+  <!-- VEHICLE -->
+  <div class="screen" id="s-vehicle">
+    <div class="row"><div class="gc"><span class="label">TIRES & STATUS</span><svg id="carDiagram" width="260" height="180" viewBox="0 0 260 180" style="display:block;margin:4px auto 0"></svg></div><div class="gc"><span class="label">FLUID LEVELS</span><div id="fluids" style="margin-top:6px"></div></div></div>
+    <div class="row"><div class="gc" id="serviceCard"></div><div class="gc" style="flex:.8" id="elecCard"></div></div>
+    <div class="gc"><span class="label">SYSTEMS</span><div class="sys-grid" id="sysGrid"></div></div>
+  </div>
+
+  <!-- CLIMATE -->
+  <div class="screen" id="s-climate">
+    <div class="gc"><div style="text-align:center"><span class="dot" id="acDot" style="width:6px;height:6px;background:var(--cyan);display:inline-block"></span> <span style="font-size:8px;font-weight:700;letter-spacing:1px;color:var(--cyan)" id="acLabel">DUAL ZONE CLIMATE ACTIVE</span></div><div class="climate-zones" style="margin-top:6px"><div class="zone"><span class="label">DRIVER</span><svg id="knobD" width="105" height="105" viewBox="0 0 110 110" style="margin-top:4px"></svg><div style="font-size:9px;color:var(--txts)" id="targetD">Target: 68°F</div></div><div class="zone"><div class="fan-bars" id="fanBars"></div><div class="label" style="margin-top:3px">FAN</div><div style="margin-top:8px" id="airflowPill"></div><div class="label" style="margin-top:3px">AIRFLOW</div></div><div class="zone"><span class="label">PASSENGER</span><svg id="knobP" width="105" height="105" viewBox="0 0 110 110" style="margin-top:4px"></svg><div style="font-size:9px;color:var(--txts)" id="targetP">Target: 70°F</div></div></div></div>
+    <div class="row" id="climateMiddle"></div>
+    <div class="row" id="climateBottom"></div>
+  </div>
+
+  <!-- MEDIA -->
+  <div class="screen" id="s-media">
+    <div class="gc"><span class="label">NOW PLAYING</span><div style="display:flex;gap:14px;align-items:center;margin-top:8px"><div class="album-art">♪</div><div style="flex:1"><div style="font-size:16px;font-weight:300" id="mediaTitle">Blinding Lights</div><div style="font-size:11px;color:var(--txts);margin-top:2px" id="mediaArtist">The Weeknd</div><div style="margin-top:10px"><div class="progress"><div class="progress-fill" id="mediaProg" style="width:67%;background:var(--purple)"></div></div><div style="display:flex;justify-content:space-between;margin-top:3px"><span style="font-size:8px;color:var(--txtm)" id="mediaTime">2:14</span><span style="font-size:8px;color:var(--txtm)">3:20</span></div></div><div class="controls"><span class="ctrl-btn">⏮</span><div class="play-btn" id="playBtn">⏸</div><span class="ctrl-btn">⏭</span></div></div></div></div>
+    <div class="row"><div class="gc"><span class="label">EQUALIZER</span><canvas id="eqCanvas" height="55" style="width:100%;margin-top:8px"></canvas></div><div class="gc" style="flex:.5"><span class="label">VOLUME</span><div style="margin-top:6px"><span class="val-lg" id="volVal">65</span><span class="unit">%</span></div><div class="progress" style="margin-top:4px"><div class="progress-fill" id="volBar" style="width:65%;background:var(--purple)"></div></div></div><div class="gc" style="flex:.6"><span class="label">SOURCE</span><div id="sourceList" style="margin-top:6px"></div></div></div>
+  </div>
+
+  <!-- NAV -->
+  <div class="screen" id="s-nav">
+    <div class="row"><div class="gc" style="text-align:center"><span class="label">COMPASS</span><svg id="compass" width="155" height="155" viewBox="0 0 160 160" style="margin-top:4px"></svg><div style="font-size:12px;font-weight:300;color:var(--txt2);margin-top:4px" id="headingLabel">247° WSW</div></div><div class="gc"><span class="label">GPS INFORMATION</span><div id="gpsInfo" style="margin-top:8px"></div><div style="margin-top:8px"><span class="label">SATELLITE SIGNAL</span><div class="sat-bars" id="satBars" style="margin-top:4px"></div></div></div></div>
+    <div class="row" id="navBottom"></div>
+  </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer"><span class="footer-text">AUTOHUB OS 2.0 &bull; OTTOCAST P3 PRO &bull; SNAPDRAGON 6225 &bull; ANDROID 13</span></div>
+</div>
+
+<script>
+const S={speed:47,rpm:2400,gear:'D',power:42,torque:156,throttle:22,fuel:72,range:248,mpg:28.4,avgMpg:26.8,odometer:12847,trip:67.3,tripTime:84,avgSpeed:48,cabinTemp:68,outsideTemp:72,engineTemp:148,oilTemp:198,transTemp:165,batteryTemp:82,tireFl:35,tireFr:35,tireRl:34,tireRr:34,oilLife:68,oilPressure:42,brakeFluid:94,coolant:91,transFluid:87,washerFluid:55,powerSteering:88,batteryVoltage:12.6,alternatorVoltage:14.2,batteryHealth:96,gForceX:.1,gForceY:-.02,peakSpeed:78,peakRpm:5200,drivingScore:87,speedHistory:[42,45,43,47,44,48,46,47,50,48,47,45,46,48,47],mpgHistory:[26,27,28,29,28,27,28,29,28,28,27,29,28,28,29],serviceIn:3200,headlightsOn:true,fogLightsOn:false,interiorLightsOn:true,drlOn:true,allDoorsLocked:true,trunkClosed:true,hoodClosed:true,tractionControl:true,acOn:true,acTarget:68,acTargetPass:70,fanSpeed:3,driverSeatHeat:1,passSeatHeat:0,steeringHeat:false,frontDefrost:false,rearDefrost:true,recirculate:false,airQuality:92,humidity:45,airflowMode:'Face',mediaPlaying:true,mediaTitle:'Blinding Lights',mediaArtist:'The Weeknd',mediaProgress:.67,volume:65,eqBands:Array(16).fill(0).map(()=>.3+Math.random()*.7),heading:247,altitude:342,latitude:40.7128,longitude:-74.006,satellites:12,speedLimit:55,signalStrength:4,phoneBattery:72};
+
+function p2c(cx,cy,r,deg){const rad=(deg-90)*Math.PI/180;return{x:cx+r*Math.cos(rad),y:cy+r*Math.sin(rad)}}
+function arc(cx,cy,r,s,e){const a=p2c(cx,cy,r,s),b=p2c(cx,cy,r,e);return`M ${a.x} ${a.y} A ${r} ${r} 0 ${e-s>180?1:0} 1 ${b.x} ${b.y}`}
+function fc(v){return v>75?'var(--green)':v>40?'var(--amber)':'var(--red)'}
+
+function updateClock(){const n=new Date();let h=n.getHours()%12;if(!h)h=12;document.getElementById('sbClock').textContent=`${h}:${String(n.getMinutes()).padStart(2,'0')}`;document.getElementById('sbAmpm').textContent=n.getHours()>=12?'PM':'AM'}
+setInterval(updateClock,5000);updateClock();
+
+function switchTab(t){document.querySelectorAll('.dock-item').forEach(d=>d.classList.toggle('active',d.dataset.tab===t));document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('s-'+t).classList.add('active')}
+
+function drawArcGauge(id,val,max,color,w,h){const svg=document.getElementById(id);const cx=w/2,cy=h/2,r=Math.min(w,h)/2-14,st=-170,en=90,sw=en-st,pct=Math.min(val/max,1),ae=st+sw*pct;
+let ticks='';for(let i=0;i<=26;i++){const a=st+i/26*sw,p1=p2c(cx,cy,r-(i%2===0?14:9),a),p2=p2c(cx,cy,r-3,a),tc=i/26<=pct?color:'var(--txtf)';ticks+=`<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="${tc}" stroke-width="${i%2===0?1.5:.6}" stroke-linecap="round"/>`}
+const nt=p2c(cx,cy,r-18,st+pct*sw);const unit=id.includes('Rpm')||id.includes('rpm')?'×1000':'MPH';
+svg.innerHTML=`<circle cx="${cx}" cy="${cy}" r="${r+6}" fill="none" stroke="rgba(255,255,255,.02)" stroke-width=".5"/><path d="${arc(cx,cy,r,st,en)}" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="6" stroke-linecap="round"/><path d="${arc(cx,cy,r,st,ae)}" fill="none" stroke="${color}" stroke-width="15" stroke-linecap="round" opacity=".1"/><path d="${arc(cx,cy,r,st,ae)}" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round" opacity=".9"/>${ticks}<line x1="${cx}" y1="${cy}" x2="${nt.x}" y2="${nt.y}" stroke="${color}" stroke-width="2" stroke-linecap="round" opacity=".85"/><circle cx="${cx}" cy="${cy}" r="7" fill="var(--surface)"/><circle cx="${cx}" cy="${cy}" r="7" fill="none" stroke="${color}" stroke-width="1.5"/><text x="${cx}" y="${cy+24}" text-anchor="middle" fill="var(--txt)" font-size="28" font-weight="200" font-family="inherit">${Math.round(val)}</text><text x="${cx}" y="${cy+39}" text-anchor="middle" fill="var(--txtm)" font-size="9" font-weight="700" letter-spacing="1" font-family="inherit">${unit}</text>`}
+
+function drawMiniRing(id,val,max,color){const svg=document.getElementById(id);const cx=16,cy=16,r=12,st=-135,en=135,sw=en-st,pct=Math.min(val/max,1);svg.innerHTML=`<path d="${arc(cx,cy,r,st,en)}" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="3" stroke-linecap="round"/><path d="${arc(cx,cy,r,st,st+sw*pct)}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round"/>`}
+
+function drawSpark(canvasId,data,color){const c=document.getElementById(canvasId);if(!c)return;const ctx=c.getContext('2d');const w=c.offsetWidth,h=c.height;c.width=w;ctx.clearRect(0,0,w,h);if(data.length<2)return;const mx=Math.max(...data),mn=Math.min(...data),rng=mx-mn||1,step=w/(data.length-1);ctx.beginPath();data.forEach((v,i)=>{const x=i*step,y=h-((v-mn)/rng)*h*.85-h*.05;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y)});ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.lineCap='round';ctx.stroke();ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.closePath();ctx.fillStyle=color.replace(')',',0.08)').replace('rgb','rgba');ctx.fill()}
+
+function drawGForce(gx,gy){const svg=document.getElementById('gforceCanvas');const cx=50,cy=50,r=38;let circles='';for(let i=1;i<=3;i++)circles+=`<circle cx="${cx}" cy="${cy}" r="${r*i/3}" fill="none" stroke="rgba(255,255,255,.025)" stroke-width=".5"/>`;const dx=cx+(gx/1.5)*r,dy=cy-gy/1.5*r;svg.innerHTML=`${circles}<line x1="${cx-r}" y1="${cy}" x2="${cx+r}" y2="${cy}" stroke="rgba(255,255,255,.04)" stroke-width=".5"/><line x1="${cx}" y1="${cy-r}" x2="${cx}" y2="${cy+r}" stroke="rgba(255,255,255,.04)" stroke-width=".5"/><circle cx="${dx}" cy="${dy}" r="10" fill="rgba(103,232,249,.2)"/><circle cx="${dx}" cy="${dy}" r="4" fill="var(--cyan)"/><text x="${cx}" y="${cy+r+12}" text-anchor="middle" fill="var(--txtm)" font-size="6" font-weight="700" font-family="inherit">G</text>`}
+
+function drawCompass(heading){const svg=document.getElementById('compass');const cx=80,cy=80,r=56;let ticks='';for(let i=0;i<72;i++){const deg=i*5,a=(deg-heading-90)*Math.PI/180,card=deg%90===0,maj=deg%45===0,iR=r-(card?16:maj?12:5),oR=r-1,tc=card?'var(--purple)':maj?'rgba(255,255,255,.2)':'rgba(255,255,255,.08)';ticks+=`<line x1="${cx+Math.cos(a)*iR}" y1="${cy+Math.sin(a)*iR}" x2="${cx+Math.cos(a)*oR}" y2="${cy+Math.sin(a)*oR}" stroke="${tc}" stroke-width="${card?2:maj?1:.5}"/>`}
+let labels='';['N','E','S','W'].forEach((l,i)=>{const b=i*90,a=(b-heading-90)*Math.PI/180,lr=r-26,x=cx+Math.cos(a)*lr,y=cy+Math.sin(a)*lr,isN=l==='N';labels+=`<text x="${x}" y="${y+4}" text-anchor="middle" fill="${isN?'var(--purple)':'var(--txts)'}" font-size="${isN?13:9}" font-weight="700" font-family="inherit">${l}</text>`});svg.innerHTML=`<circle cx="${cx}" cy="${cy}" r="${r+4}" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="1"/>${ticks}${labels}<text x="${cx}" y="${cy+7}" text-anchor="middle" fill="var(--txt)" font-size="24" font-weight="100" font-family="inherit">${heading}°</text>`}
+
+function drawTempKnob(id,val,target,color){const svg=document.getElementById(id);const cx=55,cy=55,r=40,pct=Math.max(0,Math.min(1,(val-40)/60)),st=-120,en=180,sw=en-st;svg.innerHTML=`<circle cx="${cx}" cy="${cy}" r="${r+10}" fill="${color.replace(')',',0.04)').replace('rgb','rgba')}"/><path d="${arc(cx,cy,r,st,en)}" fill="none" stroke="rgba(255,255,255,.025)" stroke-width="4" stroke-linecap="round"/><path d="${arc(cx,cy,r,st,st+sw*pct)}" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round"/><text x="${cx}" y="${cy+4}" text-anchor="middle" fill="var(--txt)" font-size="30" font-weight="100" font-family="inherit">${val}</text><text x="${cx}" y="${cy+18}" text-anchor="middle" fill="var(--txtm)" font-size="10" font-weight="600" font-family="inherit">°F</text>`}
+
+function drawCarDiagram(){const svg=document.getElementById('carDiagram');const cx=130,cy=90,bw=78,bh=135;let tires='';[{p:S.tireFl,l:'FL',x:cx-bw*.9,y:cy-bh*.28},{p:S.tireFr,l:'FR',x:cx+bw*.9,y:cy-bh*.28},{p:S.tireRl,l:'RL',x:cx-bw*.9,y:cy+bh*.28},{p:S.tireRr,l:'RR',x:cx+bw*.9,y:cy+bh*.28}].forEach(t=>{const ok=t.p>=32&&t.p<=38,c=ok?'var(--green)':'var(--amber)',tc=ok?'var(--txt)':'var(--amber)';tires+=`<rect x="${t.x-12}" y="${t.y-21}" width="24" height="42" rx="5" fill="${c}" fill-opacity=".08" stroke="${c}" stroke-opacity=".5" stroke-width="1"/><text x="${t.x}" y="${t.y}" text-anchor="middle" fill="${tc}" font-size="11" font-weight="300">${t.p}</text><text x="${t.x}" y="${t.y+14}" text-anchor="middle" fill="var(--txtm)" font-size="5" font-weight="700" letter-spacing=".5">${t.l}</text>`});const sc=S.allDoorsLocked?'var(--green)':'var(--amber)';svg.innerHTML=`<rect x="${cx-bw/2}" y="${cy-bh/2}" width="${bw}" height="${bh}" rx="${bw*.35}" fill="rgba(91,156,245,.06)" stroke="var(--glass-border)" stroke-width="1.5"/><line x1="${cx}" y1="${cy-bh*.3}" x2="${cx}" y2="${cy+bh*.3}" stroke="var(--txtf)" stroke-width=".5" stroke-dasharray="4 4"/><circle cx="${cx}" cy="${cy}" r="10" fill="${sc}" fill-opacity=".15"/><circle cx="${cx}" cy="${cy}" r="3.5" fill="${sc}"/>${tires}`}
+
+function drawEQ(){const c=document.getElementById('eqCanvas');if(!c)return;const ctx=c.getContext('2d');const w=c.offsetWidth,h=c.height;c.width=w;ctx.clearRect(0,0,w,h);const gap=3,bw=(w-gap*(S.eqBands.length-1))/S.eqBands.length;S.eqBands.forEach((v,i)=>{const x=i*(bw+gap),bh=v*h;ctx.fillStyle=`rgba(167,139,250,${.5+v*.5})`;ctx.beginPath();ctx.roundRect(x,h-bh,bw,bh,2);ctx.fill()})}
+
+function renderStatusBar(){document.getElementById('sbSpeed').textContent=S.speed;document.getElementById('sbGear').textContent=S.gear;const rpmPct=Math.min(S.rpm/8000*100,100);document.getElementById('sbRpm').style.width=rpmPct+'%';document.getElementById('sbRpm').style.background=S.rpm>5000?'var(--red)':'var(--blue)';document.getElementById('sbRpmLabel').textContent=(S.rpm/1000).toFixed(1)+'K';document.getElementById('sbWeather').textContent=`☀ ${S.outsideTemp}°`;document.getElementById('sbPhone').textContent=S.phoneBattery+'%';let sig='';for(let i=1;i<=5;i++)sig+=`<div class="sb-signal-bar" style="width:3px;height:${3+i*1.5}px;background:${i<=S.signalStrength?'var(--green)':'var(--txtf)'}"></div>`;document.getElementById('sbSignal').innerHTML=sig}
+
+function renderDashboard(){drawArcGauge('mainGauge',S.speed,160,'var(--blue)',160,160);document.getElementById('dashGear').textContent=S.gear;document.getElementById('dashHP').textContent=S.power;document.getElementById('dashTQ').textContent=S.torque;drawMiniRing('fuelR',S.fuel,100,S.fuel>25?'#5B9CF5':'#FB7185');drawMiniRing('rangeR',S.range,340,'#4ADE80');drawMiniRing('effR',S.mpg,45,'#FBBF24');document.getElementById('fuelV').textContent=Math.round(S.fuel);document.getElementById('rangeV').textContent=S.range;document.getElementById('effV').textContent=S.mpg.toFixed(1);document.getElementById('mProg').style.width=S.mediaProgress*100+'%';document.getElementById('mCur').textContent=S.mediaCurrent||'2:14';document.getElementById('avgMpg').textContent=S.avgMpg.toFixed(1)+' avg';drawSpark('mpgSpark',S.mpgHistory,'rgb(251,191,36)');
+const qi=[{l:'Engine',v:S.engineTemp,u:'°F',c:S.engineTemp>210?'var(--red)':'var(--green)'},{l:'Tires',v:'OK',u:'psi',c:'var(--green)'},{l:'Battery',v:S.batteryVoltage.toFixed(1),u:'V',c:'var(--blue)'},{l:'Trip',v:S.trip.toFixed(1),u:'mi',c:'var(--txt2)'},{l:'Score',v:S.drivingScore,u:'/100',c:'var(--cyan)'}];let qh=qi.map(q=>`<div class="gc"><div style="display:flex;align-items:center;gap:4px"><span class="dot" style="width:3px;height:3px;background:${q.c}"></span><span class="label">${q.l.toUpperCase()}</span></div><div style="margin-top:2px"><span class="val-sm">${q.v}</span><span class="unit">${q.u}</span></div></div>`).join('');qh+=`<div class="gc sparkline-gc"><span class="label">SPEED TREND</span><canvas id="speedSparkDash" height="22" style="width:100%;margin-top:3px"></canvas></div>`;document.getElementById('quickStrip').innerHTML=qh;setTimeout(()=>drawSpark('speedSparkDash',S.speedHistory,'rgb(91,156,245)'),10)}
+
+function renderPerformance(){drawArcGauge('perfSpeed',S.speed,160,'var(--blue)',150,150);drawArcGauge('perfRpm',S.rpm,8000,S.rpm>5000?'var(--red)':'var(--txts)',150,150);drawGForce(S.gForceX,S.gForceY);
+const ps=[{l:'Power',v:S.power,u:'HP',c:'var(--blue)',p:S.power/200},{l:'Torque',v:S.torque,u:'lb-ft',c:'var(--cyan)',p:S.torque/300},{l:'Throttle',v:Math.round(S.throttle),u:'%',c:'var(--amber)',p:S.throttle/100}];document.getElementById('perfStats').innerHTML=ps.map(s=>`<div class="gc"><span class="label">${s.l.toUpperCase()}</span><div style="margin-top:4px"><span class="val-lg">${s.v}</span><span class="unit">${s.u}</span></div><div class="progress" style="margin-top:4px"><div class="progress-fill" style="width:${s.p*100}%;background:${s.c}"></div></div></div>`).join('');
+const recs=[{l:'Peak Speed',v:S.peakSpeed+' MPH',c:'var(--blue)'},{l:'Peak RPM',v:S.peakRpm+'',c:'var(--red)'},{l:'0-60 EST',v:'7.2s',c:'var(--green)'},{l:'¼ Mile EST',v:'15.4s',c:'var(--amber)'},{l:'Drive Score',v:S.drivingScore+'/100',c:'var(--cyan)'}];document.getElementById('recordsList').innerHTML=recs.map(r=>`<div class="info-row"><span class="info-label"><span class="dot" style="width:3px;height:3px;background:${r.c}"></span>${r.l}</span><span class="info-val">${r.v}</span></div>`).join('');drawSpark('speedSpark',S.speedHistory,'rgb(91,156,245)')}
+
+function renderVehicle(){drawCarDiagram();const fl=[{n:'Engine Oil',v:S.oilLife,e:S.oilPressure+' PSI'},{n:'Brake Fluid',v:S.brakeFluid},{n:'Coolant',v:S.coolant},{n:'Transmission',v:S.transFluid},{n:'Washer',v:S.washerFluid},{n:'Power Steer',v:S.powerSteering}];document.getElementById('fluids').innerHTML=fl.map(f=>{const c=fc(f.v);return`<div style="display:flex;align-items:center;gap:6px;padding:3px 0"><span class="dot" style="width:4px;height:4px;background:${c}"></span><span style="font-size:9px;color:var(--txts);flex:1">${f.n}</span>${f.e?`<span style="font-size:7px;color:var(--txtm)">${f.e}</span>`:''}<span style="font-size:10px;font-weight:300">${f.v}%</span><div class="progress" style="width:40px"><div class="progress-fill" style="width:${f.v}%;background:${c}"></div></div></div>`}).join('');
+const sg=S.serviceIn>1500;document.getElementById('serviceCard').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><div><span class="label">NEXT SERVICE</span><div style="margin-top:3px"><span class="val-lg">${S.serviceIn.toLocaleString()}</span><span class="unit">mi</span></div></div><div class="progress" style="width:60px"><div class="progress-fill" style="width:${S.serviceIn/5000*100}%;background:${sg?'var(--green)':'var(--amber)'}"></div></div><span class="pill" style="background:${sg?'rgba(74,222,128,.1)':'rgba(251,191,36,.1)'};border:1px solid ${sg?'rgba(74,222,128,.15)':'rgba(251,191,36,.15)'};color:${sg?'var(--green)':'var(--amber)'}">${sg?'GOOD':'DUE SOON'}</span></div>`;
+const el=[{l:'Battery',v:S.batteryVoltage.toFixed(1)+'V',c:'var(--green)'},{l:'Alternator',v:S.alternatorVoltage.toFixed(1)+'V',c:'var(--blue)'},{l:'Health',v:S.batteryHealth+'%',c:S.batteryHealth>80?'var(--green)':'var(--amber)'}];document.getElementById('elecCard').innerHTML=`<span class="label">ELECTRICAL</span><div style="margin-top:4px">${el.map(e=>`<div class="info-row"><span class="info-label"><span class="dot" style="width:3px;height:3px;background:${e.c}"></span>${e.l}</span><span class="info-val">${e.v}</span></div>`).join('')}</div>`;
+const sys=[{l:'Headlights',on:S.headlightsOn},{l:'DRL',on:S.drlOn},{l:'Fog Lights',on:S.fogLightsOn},{l:'Interior',on:S.interiorLightsOn},{l:'Doors',on:S.allDoorsLocked,s:S.allDoorsLocked?'LOCKED':'OPEN'},{l:'Hood/Trunk',on:S.hoodClosed&&S.trunkClosed,s:S.hoodClosed&&S.trunkClosed?'CLOSED':'OPEN'},{l:'Traction Ctrl',on:S.tractionControl},{l:'Windows',on:true,s:'UP'}];document.getElementById('sysGrid').innerHTML=sys.map(s=>`<div class="sys-item ${s.on?'on':''}"><span class="dot" style="width:4px;height:4px;background:${s.on?'var(--green)':'var(--txtm)'}"></span><span class="sys-name" style="color:${s.on?'var(--txts)':'var(--txtm)'}">${s.l}</span><span class="sys-status" style="color:${s.on?'var(--green)':'var(--txtm)'}">${s.s||(s.on?'ON':'OFF')}</span></div>`).join('')}
+
+function renderClimate(){drawTempKnob('knobD',S.cabinTemp,S.acTarget,'rgb(103,232,249)');drawTempKnob('knobP',S.cabinTemp+2,S.acTargetPass,'rgb(91,156,245)');document.getElementById('targetD').textContent=`Target: ${S.acTarget}°F`;document.getElementById('targetP').textContent=`Target: ${S.acTargetPass}°F`;let fb='';for(let i=1;i<=5;i++)fb+=`<div class="fan-bar" style="width:10px;height:${4+i*2.5}px;background:${i<=S.fanSpeed?'var(--cyan)':'var(--glass)'}"></div>`;document.getElementById('fanBars').innerHTML=fb;document.getElementById('airflowPill').innerHTML=`<span class="pill" style="background:rgba(103,232,249,.1);border:1px solid rgba(103,232,249,.15);color:var(--cyan)">${S.airflowMode.toUpperCase()}</span>`;
+const mid=[{l:'AIR QUALITY',h:`<span class="val-lg">${S.airQuality}</span><span class="unit"> AQI</span><div style="margin-top:3px"><span class="pill" style="background:${S.airQuality>80?'rgba(74,222,128,.1)':'rgba(251,191,36,.1)'};border:1px solid ${S.airQuality>80?'rgba(74,222,128,.15)':'rgba(251,191,36,.15)'};color:${S.airQuality>80?'var(--green)':'var(--amber)'}">${S.airQuality>80?'GOOD':'MODERATE'}</span></div>`},{l:'HUMIDITY',h:`<span class="val-lg">${S.humidity}</span><span class="unit">%</span><div class="progress" style="margin-top:3px"><div class="progress-fill" style="width:${S.humidity}%;background:var(--cyan)"></div></div>`},{l:'OUTSIDE',h:`<span class="val-lg">${S.outsideTemp}</span><span style="font-size:10px;color:var(--txtm)">°F</span>`}];document.getElementById('climateMiddle').innerHTML=mid.map(m=>`<div class="gc"><span class="label">${m.l}</span><div style="margin-top:4px">${m.h}</div></div>`).join('');
+const dots=(l)=>[1,2,3].map(i=>`<div class="seat-dot" style="background:${i<=l?'var(--amber)':'var(--glass)'}"></div>`).join('');const defr=(l,on)=>`<div style="display:flex;align-items:center;gap:4px;padding:2px 0"><span class="dot" style="width:3px;height:3px;background:${on?'var(--amber)':'var(--txtm)'}"></span><span style="font-size:10px;color:${on?'var(--txts)':'var(--txtm)'}">${l}</span></div>`;const tog=(on)=>`<div style="display:flex;align-items:center;gap:4px"><span class="dot" style="width:3px;height:3px;background:${on?'var(--cyan)':'var(--txtm)'}"></span><span style="font-size:9px;color:${on?'var(--txts)':'var(--txtm)'}">${on?'ON':'OFF'}</span></div>`;
+const thermals=[{l:'Cabin',v:S.cabinTemp,m:100,c:'var(--cyan)'},{l:'Engine',v:S.engineTemp,m:260,c:S.engineTemp>210?'var(--red)':'var(--amber)'},{l:'Oil',v:S.oilTemp,m:280,c:S.oilTemp>230?'var(--red)':'var(--green)'},{l:'Trans',v:S.transTemp,m:250,c:'var(--purple)'},{l:'Battery',v:S.batteryTemp,m:150,c:'var(--blue)'}];
+document.getElementById('climateBottom').innerHTML=`<div class="gc" style="flex:.5"><span class="label">SEAT HEAT</span><div style="display:flex;justify-content:space-evenly;margin-top:6px"><div style="text-align:center"><span style="font-size:7px;font-weight:700;color:var(--txtm)">D</span><div class="seat-dots">${dots(S.driverSeatHeat)}</div></div><div style="width:1px;height:24px;background:var(--txtf)"></div><div style="text-align:center"><span style="font-size:7px;font-weight:700;color:var(--txtm)">P</span><div class="seat-dots">${dots(S.passSeatHeat)}</div></div></div><div style="margin-top:6px"><span class="label">STEERING</span><div style="margin-top:3px">${tog(S.steeringHeat)}</div></div></div><div class="gc" style="flex:.4"><span class="label">DEFROST</span><div style="margin-top:6px">${defr('Front',S.frontDefrost)}${defr('Rear',S.rearDefrost)}</div><div style="margin-top:6px"><span class="label">RECIRCULATE</span><div style="margin-top:3px">${tog(S.recirculate)}</div></div></div><div class="gc"><span class="label">THERMAL OVERVIEW</span><div style="margin-top:6px">${thermals.map(t=>`<div class="thermal-row"><div class="thermal-header"><span class="thermal-name">${t.l}</span><span class="thermal-val">${t.v}°F</span></div><div class="progress" style="height:2px"><div class="progress-fill" style="width:${t.v/t.m*100}%;background:${t.c}"></div></div></div>`).join('')}</div></div>`}
+
+function renderMedia(){document.getElementById('mediaProg').style.width=S.mediaProgress*100+'%';document.getElementById('mediaTime').textContent=S.mediaCurrent||'2:14';document.getElementById('volVal').textContent=S.volume;document.getElementById('volBar').style.width=S.volume+'%';drawEQ();const srcs=[{n:'Bluetooth',a:true},{n:'USB',a:false},{n:'Radio',a:false},{n:'Streaming',a:false}];document.getElementById('sourceList').innerHTML=srcs.map(s=>`<div style="display:flex;align-items:center;gap:6px;padding:3px 0"><span class="dot" style="width:4px;height:4px;background:${s.a?'var(--purple)':'var(--txtm)'}"></span><span style="font-size:10px;color:${s.a?'var(--txt)':'var(--txtm)'}">${s.n}</span></div>`).join('')}
+
+function renderNav(){drawCompass(S.heading);const dir=['N','NE','E','SE','S','SW','W','NW'][Math.round(S.heading/45)%8];document.getElementById('headingLabel').textContent=`${S.heading}° ${dir}`;
+const gps=[{l:'Latitude',v:S.latitude.toFixed(4)+'°N',c:'var(--purple)'},{l:'Longitude',v:(-S.longitude).toFixed(4)+'°W',c:'var(--purple)'},{l:'Altitude',v:S.altitude+' ft',c:'var(--blue)'},{l:'Satellites',v:S.satellites+'',c:'var(--green)'},{l:'Accuracy',v:'±3m',c:'var(--cyan)'},{l:'HDOP',v:'0.8',c:'var(--green)'}];document.getElementById('gpsInfo').innerHTML=gps.map(g=>`<div class="info-row"><span class="info-label"><span class="dot" style="width:3px;height:3px;background:${g.c}"></span>${g.l}</span><span class="info-val">${g.v}</span></div>`).join('');
+let sats='';for(let i=1;i<=12;i++)sats+=`<div class="sat-bar" style="flex:1;height:${i<=S.satellites?12:4}px;background:${i<=S.satellites?'var(--green)':'var(--glass)'}"></div>`;document.getElementById('satBars').innerHTML=sats;
+const over=S.speed>S.speedLimit;document.getElementById('navBottom').innerHTML=`<div class="gc"><span class="label">CURRENT SPEED</span><div style="margin-top:4px"><span class="val-xl">${S.speed}</span><span style="font-size:10px;font-weight:700;color:var(--txtm)"> MPH</span></div></div><div class="gc"><span class="label">SPEED LIMIT</span><div style="margin-top:4px"><span class="val-xl" style="color:${over?'var(--red)':'var(--txt)'}">${S.speedLimit}</span><span style="font-size:10px;font-weight:700;color:var(--txtm)"> MPH</span></div>${over?`<div style="margin-top:3px"><span class="pill" style="background:rgba(251,113,133,.1);border:1px solid rgba(251,113,133,.15);color:var(--red)">+${S.speed-S.speedLimit} OVER</span></div>`:''}</div><div class="gc" style="flex:1.5"><span class="label">TRIP STATISTICS</span><div style="margin-top:6px">${[['Distance',S.trip.toFixed(1)+' mi'],['Duration',Math.floor(S.tripTime/60)+'h '+S.tripTime%60+'m'],['Avg Speed',S.avgSpeed+' MPH'],['Avg MPG',S.avgMpg.toFixed(1)]].map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:2px 0"><span style="font-size:9px;color:var(--txts)">${l}</span><span style="font-size:9px;font-weight:300">${v}</span></div>`).join('')}</div></div>`}
+
+function render(){renderStatusBar();renderDashboard();renderPerformance();renderVehicle();renderClimate();renderMedia();renderNav()}
+
+function simulate(){S.speed=Math.max(0,Math.min(130,S.speed+(Math.random()-.46)*5))|0;S.rpm=Math.max(750,Math.min(7500,750+S.speed*40+(Math.random()*350|0)));S.power=(20+S.speed*.6+Math.random()*15)|0;S.torque=(100+S.speed*1.2+Math.random()*20)|0;S.throttle=Math.max(0,Math.min(100,S.speed*.6+Math.random()*10));S.fuel=Math.max(0,S.fuel-Math.random()*.005);S.range=Math.max(0,S.range-(Math.random()<.3?1:0));S.mpg=Math.max(15,Math.min(38,S.mpg+(Math.random()-.48)*.5));S.trip+=S.speed*.00015;S.engineTemp=142+(Math.random()*20|0);S.oilTemp=190+(Math.random()*15|0);S.transTemp=158+(Math.random()*14|0);S.batteryTemp=78+(Math.random()*10|0);S.batteryVoltage=12.4+Math.random()*.4;S.alternatorVoltage=13.8+Math.random()*.6;S.oilPressure=38+(Math.random()*10|0);S.gForceX=(Math.random()-.5)*.6;S.gForceY=(Math.random()-.5)*.3;S.peakSpeed=Math.max(S.peakSpeed,S.speed);S.peakRpm=Math.max(S.peakRpm,S.rpm);S.drivingScore=Math.max(70,Math.min(99,82+(Math.random()*10|0)));S.speedHistory=[...S.speedHistory.slice(-19),S.speed];S.mpgHistory=[...S.mpgHistory.slice(-19),S.mpg];S.mediaProgress=S.mediaProgress>=1?0:S.mediaProgress+.01;const sec=(S.mediaProgress*200)|0;S.mediaCurrent=`${(sec/60)|0}:${String(sec%60).padStart(2,'0')}`;S.eqBands=S.eqBands.map(()=>.15+Math.random()*.85);S.heading=((S.heading+(Math.random()*3|0)-1)%360+360)%360;S.altitude+=((Math.random()*3|0)-1);render()}
+
+render();setInterval(simulate,2000);
+</script>
+</body>
+</html>
