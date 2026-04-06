@@ -46,23 +46,27 @@ class ObdManager(private val context: Context) {
         private val SPP_UUID: UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
 
         // ----- BLE GATT service/characteristic UUIDs -----
-        /** Common BLE OBD service UUIDs (Innova, generic ELM327-BLE clones) */
+        /** Common BLE OBD service UUIDs (Innova, HT500, generic ELM327-BLE clones) */
         private val BLE_SERVICE_UUIDS = listOf(
             UUID.fromString("0000fff0-0000-1000-8000-00805f9b34fb"),
             UUID.fromString("000018f0-0000-1000-8000-00805f9b34fb"),
-            UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb")
+            UUID.fromString("0000ffe0-0000-1000-8000-00805f9b34fb"),
+            UUID.fromString("e7810a71-73ae-499d-8c15-faa9aef0c3f2"), // Innova/HT500 custom
+            UUID.fromString("0000ffe5-0000-1000-8000-00805f9b34fb"), // Some HT500 variants
         )
 
         /** Write characteristic UUIDs */
         private val BLE_WRITE_CHAR_UUIDS = listOf(
             UUID.fromString("0000fff2-0000-1000-8000-00805f9b34fb"),
-            UUID.fromString("0000ffe2-0000-1000-8000-00805f9b34fb")
+            UUID.fromString("0000ffe2-0000-1000-8000-00805f9b34fb"),
+            UUID.fromString("bef8d6c9-9c21-4c9e-b632-bd58c1009f9f"), // Innova/HT500 custom
         )
 
         /** Notify / read characteristic UUIDs */
         private val BLE_NOTIFY_CHAR_UUIDS = listOf(
             UUID.fromString("0000fff1-0000-1000-8000-00805f9b34fb"),
-            UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb")
+            UUID.fromString("0000ffe1-0000-1000-8000-00805f9b34fb"),
+            UUID.fromString("bef8d6c9-9c21-4c9e-b632-bd58c1009f9f"), // Innova/HT500 custom (same for R/W)
         )
 
         /** Client Characteristic Configuration Descriptor — required to enable BLE notifications */
@@ -87,16 +91,16 @@ class ObdManager(private val context: Context) {
         private const val READ_TIMEOUT_MS = 2000L
 
         /** BLE response timeout — BLE can be slower with chunked replies */
-        private const val BLE_READ_TIMEOUT_MS = 3000L
+        private const val BLE_READ_TIMEOUT_MS = 5000L
 
         /** Query loop interval in milliseconds */
-        private const val QUERY_INTERVAL_MS = 500L
+        private const val QUERY_INTERVAL_MS = 1000L
 
         /** Delay after ATZ reset */
         private const val RESET_DELAY_MS = 1000L
 
         /** BLE scan duration in milliseconds */
-        private const val BLE_SCAN_DURATION_MS = 5000L
+        private const val BLE_SCAN_DURATION_MS = 10000L
     }
 
     enum class ConnectionState {
@@ -260,14 +264,30 @@ class ObdManager(private val context: Context) {
             _connectionState.value = ConnectionState.CONNECTED
         }
 
-        @Deprecated("Deprecated in API 33, still needed for lower API levels")
+        // Android 13+ (API 33) — new callback signature
+        override fun onCharacteristicChanged(
+            g: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic,
+            value: ByteArray
+        ) {
+            handleBleChunk(value)
+        }
+
+        // Pre-Android 13 — deprecated but needed for older API levels
+        @Deprecated("Deprecated in API 33")
         override fun onCharacteristicChanged(
             g: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
         ) {
+            @Suppress("DEPRECATION")
             val chunk = characteristic.value ?: return
+            handleBleChunk(chunk)
+        }
+
+        private fun handleBleChunk(chunk: ByteArray) {
             val text = String(chunk)
             bleResponseBuffer.append(text)
+            Log.d(TAG, "BLE chunk: ${text.replace("\r", "\\r").replace("\n", "\\n")}")
 
             // The ELM327 prompt '>' signals end of response
             if (text.contains(">")) {
@@ -542,22 +562,30 @@ class ObdManager(private val context: Context) {
         // Flush any reset banner text
         if (isBle) {
             // For BLE, give time for notification chunks to arrive and clear them
-            delay(500)
+            delay(1000)
             bleResponseBuffer.clear()
         } else {
             drainInput()
         }
 
         // ATE0 — echo off
-        sendCommandAndRead("ATE0")
+        val echoResp = sendCommandAndRead("ATE0")
+        Log.i(TAG, "ATE0 response: $echoResp")
         // ATL0 — linefeeds off
         sendCommandAndRead("ATL0")
         // ATS0 — spaces off
         sendCommandAndRead("ATS0")
         // ATH0 — headers off
         sendCommandAndRead("ATH0")
-        // ATSP6 — CAN 11-bit 500 kbaud (ISO 15765-4) — correct for VW
-        sendCommandAndRead("ATSP6")
+        // ATAT1 — adaptive timing auto (faster responses)
+        sendCommandAndRead("ATAT1")
+        // ATSP0 — auto-detect protocol (more reliable than forcing ATSP6)
+        val protoResp = sendCommandAndRead("ATSP0")
+        Log.i(TAG, "ATSP0 response: $protoResp")
+
+        // Trigger protocol detection with a simple PID query
+        val testResp = sendCommandAndRead("0100")
+        Log.i(TAG, "Protocol detection (0100) response: $testResp")
     }
 
     // ---------------------------------------------------------------
