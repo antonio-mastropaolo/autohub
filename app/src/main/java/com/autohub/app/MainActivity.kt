@@ -3,7 +3,9 @@ package com.autohub.app
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -18,6 +20,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,6 +67,18 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
     var time by remember { mutableStateOf("") }
     var ampm by remember { mutableStateOf("") }
 
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { /* permissions granted, OBD will auto-connect from ViewModel */ }
+
+    LaunchedEffect(Unit) {
+        permissionLauncher.launch(arrayOf(
+            android.Manifest.permission.BLUETOOTH_CONNECT,
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        ))
+    }
+
     LaunchedEffect(Unit) {
         while (true) {
             val now = Calendar.getInstance()
@@ -83,9 +102,9 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
 
         Column(Modifier.fillMaxSize()) {
 
-            // ═════════════��═════════════════════════════════
+            // ════════════════════════════════════════════════
             //  STATUS BAR — persistent driving info
-            // ════════════════════════════════════════��══════
+            // ════════════════════════════════════════════════
             Row(
                 Modifier.fillMaxWidth()
                     .background(C.DockBg)
@@ -140,9 +159,20 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                 Box(Modifier.width(0.5.dp).height(14.dp).background(C.TextFaint))
                 Spacer(Modifier.width(12.dp))
 
-                // Live
-                StatusDot(C.Green, 4.dp)
-                Text(" LIVE", style = TextStyle(color = C.TextMuted, fontSize = 6.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp))
+                // Connection status: OBD (green) or DEMO (amber)
+                Icon(
+                    imageVector = Icons.Outlined.Bluetooth,
+                    contentDescription = "Bluetooth",
+                    tint = if (car.obdConnected) C.Green else Color(0xFFFFB300),
+                    modifier = Modifier.size(10.dp)
+                )
+                Spacer(Modifier.width(2.dp))
+                StatusDot(if (car.obdConnected) C.Green else Color(0xFFFFB300), 4.dp)
+                if (car.obdConnected) {
+                    Text(" OBD", style = TextStyle(color = C.Green, fontSize = 6.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp))
+                } else {
+                    Text(" DEMO", style = TextStyle(color = Color(0xFFFFB300), fontSize = 6.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.6.sp))
+                }
                 Spacer(Modifier.width(8.dp))
 
                 // Clock
@@ -150,9 +180,9 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                 Text(" $ampm", style = TextStyle(color = C.TextMuted, fontSize = 6.sp, fontWeight = FontWeight.Bold))
             }
 
-            // ════════════════════════════���══════════════════
+            // ════════════════════════════════════════════════
             //  BODY — Dock + Content
-            // ════════════════════════════════════════��══════
+            // ════════════════════════════════════════════════
             Row(Modifier.weight(1f)) {
 
                 // ── Navigation Dock ──
@@ -170,23 +200,35 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
                             .background(C.BlueDim)
                             .border(0.5.dp, C.Blue.copy(alpha = 0.15f), RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center
-                    ) { Text("\u25c8", style = TextStyle(fontSize = 12.sp, color = C.Blue)) }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Hub,
+                            contentDescription = "AutoHub",
+                            tint = C.Blue,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
 
                     // Nav items
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        DockItem("\u2302", "HOME", "dashboard", tab) { tab = it }
-                        DockItem("\u2299", "PERF", "performance", tab) { tab = it }
-                        DockItem("\u25c7", "CAR", "vehicle", tab) { tab = it }
-                        DockItem("\u2731", "HVAC", "climate", tab) { tab = it }
-                        DockItem("\u266a", "MEDIA", "media", tab) { tab = it }
-                        DockItem("\u25ce", "NAV", "nav", tab) { tab = it }
+                        DockItem(Icons.Outlined.Dashboard, "HOME", "dashboard", tab) { tab = it }
+                        DockItem(Icons.Outlined.Speed, "PERF", "performance", tab) { tab = it }
+                        DockItem(Icons.Outlined.DirectionsCar, "CAR", "vehicle", tab) { tab = it }
+                        DockItem(Icons.Outlined.AcUnit, "HVAC", "climate", tab) { tab = it }
+                        DockItem(Icons.Outlined.MusicNote, "MEDIA", "media", tab) { tab = it }
+                        DockItem(Icons.Outlined.Explore, "NAV", "nav", tab) { tab = it }
                     }
 
                     // Settings
-                    Text("\u2699", style = TextStyle(fontSize = 14.sp, color = C.TextMuted))
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = "Settings",
+                        tint = C.TextMuted,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
 
                 // ── Main Content ──
@@ -217,10 +259,10 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
 
             // ═══════════════════════════════════════════════
             //  FOOTER
-            // ═══════════════════════════════════════════��═══
+            // ═══════════════════════════════════════════════
             Box(Modifier.fillMaxWidth().padding(vertical = 4.dp), Alignment.Center) {
                 Text(
-                    "AUTOHUB OS 2.0  \u2022  OTTOCAST P3 PRO  \u2022  SNAPDRAGON 6225  \u2022  ANDROID 13",
+                    "AUTOHUB OS 2.0  \u2022  VW ATLAS CROSS SPORT 2024  \u2022  OTTOCAST P3 PRO",
                     style = TextStyle(color = C.TextMuted, fontSize = 5.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.4.sp)
                 )
             }
@@ -229,7 +271,7 @@ fun AutoHubOS(vm: CarViewModel = viewModel()) {
 }
 
 @Composable
-private fun DockItem(icon: String, label: String, id: String, activeTab: String, onTap: (String) -> Unit) {
+private fun DockItem(icon: ImageVector, label: String, id: String, activeTab: String, onTap: (String) -> Unit) {
     val active = activeTab == id
     Box(
         Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).clickable { onTap(id) }
@@ -242,7 +284,12 @@ private fun DockItem(icon: String, label: String, id: String, activeTab: String,
                 Spacer(Modifier.width(3.dp))
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(icon, style = TextStyle(fontSize = 14.sp, color = if (active) C.Blue else C.TextMuted))
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = if (active) C.Blue else C.TextMuted,
+                    modifier = Modifier.size(18.dp)
+                )
                 Text(label, style = TextStyle(color = if (active) C.Blue else C.TextMuted, fontSize = 5.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp))
             }
         }

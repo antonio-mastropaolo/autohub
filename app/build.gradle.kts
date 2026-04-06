@@ -74,4 +74,13 @@ dependencies {
 
     // Canvas for custom gauges
     implementation("androidx.compose.foundation:foundation")
+
+    // Material icons extended set
+    implementation("androidx.compose.material:material-icons-extended")
+
+    // Activity KTX for permission handling
+    implementation("androidx.activity:activity-ktx:1.8.2")
+
+    // Play Services location
+    implementation("com.google.android.gms:play-services-location:21.1.0")
 }
